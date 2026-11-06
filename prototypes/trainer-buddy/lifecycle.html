@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>uTrainerBuddy · 模型研发工作台</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <aside class="sidebar" aria-label="项目导航">
+      <a class="brand" href="#overview"><span class="brand-mark">u<span>↗</span></span><span>TrainerBuddy<small>MODEL WORKSPACE</small></span></a>
+      <button class="workspace-picker" data-action="project"><span class="project-icon">S</span><span><strong>售后服务模型</strong><small>本地工作区</small></span><span class="chevron">⌄</span></button>
+      <div class="nav-caption">工作空间 <span>⌘ K</span></div>
+      <nav id="navigation"></nav>
+      <div class="sidebar-bottom">
+        <button class="nav-item" data-action="tasks"><span class="nav-icon" id="task-icon"></span><span class="nav-label">后台任务</span><span class="count" id="sidebar-task-count">3</span></button>
+        <button class="nav-item" data-page="compute"><span class="nav-icon" id="compute-icon"></span><span class="nav-label">算力与连接</span><span class="status-dot green"></span></button>
+        <button class="nav-item" data-page="extensions"><span class="nav-icon" id="extension-icon"></span><span class="nav-label">Skills 与 MCP</span></button>
+        <div class="engine-mini"><span class="engine-logo">✳</span><span><strong>Codex</strong><small>引擎就绪 · 项目作用域</small></span><button class="icon-button" data-action="engine" aria-label="选择智能体引擎">⌄</button></div>
+        <div class="profile"><span class="avatar user">G</span><span>我的研发空间</span><span class="prototype-tag">交互原型</span></div>
+      </div>
+    </aside>
+    <div class="shell">
+      <header class="topbar">
+        <div class="breadcrumbs"><span class="workspace-name">我的工作区</span><span>/</span><strong>售后服务模型</strong><span>/</span><span id="breadcrumb-current">项目概览</span></div>
+        <div class="top-actions">
+          <span class="demo-label"><span class="status-dot"></span>模拟数据</span>
+          <button class="icon-button" data-action="search" aria-label="搜索项目与任务" id="search-button"></button>
+          <button class="icon-button attention-button" data-action="attention" aria-label="查看待办" id="attention-button"></button>
+          <button class="icon-button" data-action="theme" aria-label="切换深浅主题" id="theme-button"></button>
+          <span class="top-divider"></span>
+          <button class="buddy-toggle" data-action="buddy" aria-pressed="true">✳ <span>Buddy</span></button>
+        </div>
+      </header>
+      <div class="workbench">
+        <main id="main" tabindex="-1"></main>
+        <aside class="buddy-panel" id="buddy-panel" aria-label="Buddy 协作面板"></aside>
+      </div>
+      <footer class="statusbar">
+        <button data-action="tasks"><span class="status-dot green" id="footer-dot"></span><span id="footer-status">3 个后台任务</span><span class="footer-detail">数据构建 · 训练 · 评测</span></button>
+        <div><button data-action="connection" id="connection-button">SSH 已连接</button><span class="footer-detail">桌面关闭后，已提交训练仍继续</span></div>
+      </footer>
+    </div>
+  </div>
+  <dialog id="modal" class="modal" aria-label="操作详情"></dialog>
+  <dialog id="sheet" class="sheet" aria-label="任务与详情"></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
