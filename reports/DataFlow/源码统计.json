@@ -1,0 +1,33 @@
+{
+  "analysis_date": "2026-11-06",
+  "version_file": "__version__ = '1.0.13'",
+  "python_files_parsed_excluding_scaffold": 385,
+  "syntax_errors": 0,
+  "registered_operator_classes": 207,
+  "operators_by_domain": {
+    "agentic_rag": 4,
+    "chemistry": 2,
+    "code": 19,
+    "conversations": 14,
+    "core_speech": 1,
+    "core_text": 19,
+    "core_vision": 1,
+    "general_text": 62,
+    "knowledge_cleaning": 10,
+    "pdf2vqa": 5,
+    "reasoning": 19,
+    "text2sql": 12,
+    "text_pt": 15,
+    "text_sft": 24
+  },
+  "operators_by_category": {
+    "eval": 53,
+    "filter": 72,
+    "generate": 61,
+    "refine": 21
+  },
+  "registered_prompt_classes": 98,
+  "pipeline_python_files": 53,
+  "test_files": 68,
+  "method": "AST only; explicit registration decorators; no package import or execution"
+}
