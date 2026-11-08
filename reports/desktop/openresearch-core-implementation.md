@@ -101,3 +101,30 @@ Electron 测试使用全新数据目录和隐藏窗口，不访问原有工作�
 原生 Agent 验收是显式 `--agent` 模式，使用现有 Codex 登录和模型服务，限定测试仓库、测试 SSH 主机和一次确定性实验；测试超时中断会话，不自动批准权限请求。跨盘修复后会话已能初始化，最新原生日志显示 shell 工具失败：`orchestrator_helper_launch_canceled: ShellExecuteExW failed to launch setup helper: 1223`。这是 Windows 沙箱启动环境阻塞，不能记作 SSH Run 成功，也没有通过关闭沙箱规避。最新失败材料目录：`.tools/research-core/tests/ssh-workspace-kgqerT`；其中可能包含原生会话配置/记录，仅供本机诊断，不应打包发布。
 
 剩余门槛：原生 Codex Windows 沙箱恢复后重跑一次 Agent 提交/结果分析；远端未安装内核时的安装与升级；I2 后端重启/取消；I3 outbox 第二轮与服务端预算；论文/仓库复现以及用户 GPU 真正训练。测试指标仅为脚本输出，不是模型训练结果。
+
+## I2：解除沙箱阻塞并验证真实 Agent 实验（2026-11-08）
+
+上述 Windows 1223 问题已在隔离测试环境解除。原生日志明确记录 `sandbox setup marker missing or incompatible`：研究内核隔离了原生数据目录，该目录需要自己的正常沙箱初始化。使用已安装 `codex-cli 0.166.0` 的原生管理员设置流程后，无模型调用的 `codex sandbox -P :workspace --include-managed-config` shell 读文件预检通过。未切换到 full access/unelevated，未复制用户的 sandbox secrets/setup marker。初始化机制参考 [OpenAI 官方 Windows sandbox 文档](https://developers.openai.com/codex/windows)。
+
+新增 `verify-codex-sandbox.mjs` 只允许已存在、真实路径位于研究测试目录内的 native home 与工作目录。`test-ssh-workspace.mjs --agent --codex-binary <绝对路径> --agent-home <已初始化测试目录>` 可以在新项目和新会话中复用测试 native home，退出时移除临时 junction，保留初始化目录。未指定 `--agent-home` 时仍使用全新目录；首次初始化可能需要原生系统授权。
+
+原生 Agent 验收已通过：真实 Windows SSH 连接隔离 Linux 工作区；Agent 创建独立 worktree，提交恰好一个 SSH Run，Run 达到 `done`，Agent 回答包含该 Run 的真实 ID 和 `metric.fixture=1`。这是实际模型调用及实际 Run Engine 执行；测试脚本输出的指标不代表模型质量。脚本另增加独立 `orx logs <runId>` 断言与 `.tools/research-core/acceptance/agent-<runId>.json` 持久化证据，避免临时目录清理后只剩终端 PASS。
+
+`node research-core/scripts/test-linux.mjs` 扩展验收已通过：
+
+1. 原有 380 个 UI 资源、认证、真实 Git baseline/Local Run、detach/reattach 回归通过。
+2. 创建 20 秒实验，确认 running 后核对实例/端口与 `/proc/<pid>/exe` 指向本次复制的二进制，再 SIGKILL 测试服务。重新 ensure 得到新 instance；原 Run 完成，日志中启动标记恰好一次，数据库没有多出重复 Run。
+3. 创建长实验，执行原生 `exp cancel`，最终状态为 `cancelled`，未出现成功指标。
+4. 创建退出码 7 的实验，最终状态 `failed`，API 保留 `exitCode=7`，日志仍可读取。
+
+初次恢复测试因错误地在 Windows 风格的数据目录中查找 Unix 描述文件而失败；已修正为 Unix 的 `/tmp/orx-<uid>` 位置，同时保留实例、端口、二进制路径三项核对。测试未停止任何用户服务。Node/Python 语法与差异空白检查通过。
+
+边界：本轮是单 Agent 小实验闭环以及 Linux Local adapter 的服务故障验收；不是全部 SSH/GPU 故障组合，也未证明重复通知去重、预算或自主第二轮。I2 的这两项基础门槛完成，下一主任务为 I3；I1 自动安装/升级与 I2 SSH 计算侧故障注入仍保留待办。
+
+稳定性复测：0.166 的首次原生实验成功后，为新增独立日志断言及持久化证据进行的第二次运行未通过。无模型预检通过，但 Agent 工具执行时原生日志再次出现 `sandbox users missing or incompatible with marker version`，随后模型请求在沙箱外读取项目指令；测试没有批准该请求，主动中断并保留 `.tools/research-core/tests/ssh-workspace-KDU4yd`。本机存在 0.166/0.167 多个 Codex 安装，版本冲突目前是待验证假设；不能把第一次 PASS 描述为长期稳定。后续使用本机已有 0.167、相同沙箱与审批设置继续验证。
+
+进一步源码核对发现预检路径不一致：内核 `native_store::prepare_codex` 返回规范化真实路径，而预检最初把临时 junction 路径直接作为 native home。已修正预检为 `realpath(nativeHome)` 与 `realpath(cwd)`，保持测试预检与生产 Harness 使用同一个物理目录。该差异是确定的代码问题；它与多版本沙箱错误的因果关系仍需复测，不能仅凭版本共存推断根因。
+
+最后一次 0.167 运行在 240 秒等待预算内未完成 Agent 验收，测试已中断并清理其服务，诊断目录为 `.tools/research-core/tests/ssh-workspace-wVeChy`。该进程启动早于预检真实路径修正，不能作为修正后的验证结果。当前结论是“一次原生实验成功、Linux 恢复验收通过、Windows 重复运行稳定性未通过”；不是 I2 整体完成。新增独立日志断言/持久化报告仍待完整成功运行证明，当前没有新的成功证据 JSON。
+
+重复沙箱提示的已知因素：测试最初每次创建全新的 native home；复用后预检 junction 路径与生产 canonical 路径不一致。日志中的 helper copy 也可能只是校验并复用本机二进制，不能等同于每次联网下载。已暂停重复初始化与模型调用，后续优先验证固定测试 home 的路径及运行状态，不通过关闭沙箱或自动批准外部执行请求获取 PASS。

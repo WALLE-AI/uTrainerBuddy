@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import secrets
 import shutil
+import signal
 import subprocess
 import tempfile
 import threading
@@ -47,7 +48,7 @@ with tempfile.TemporaryDirectory(prefix="trainerbuddy-core-") as temporary:
                     attachment.stdin.write("ping\n")
                     attachment.stdin.flush()
                 except (OSError, ValueError):
-                    return
+                    continue
     heartbeat_thread = threading.Thread(target=heartbeat, daemon=True)
     try:
         descriptor = marked(command("remote-host", "ensure"))
@@ -97,7 +98,7 @@ with tempfile.TemporaryDirectory(prefix="trainerbuddy-core-") as temporary:
         git("init", "-q", "--initial-branch=main")
         git("config", "user.name", "Core Test")
         git("config", "user.email", "test@invalid")
-        (repository / "train.sh").write_text("printf 'baseline-start\\n'\nsleep 3\nprintf 'metric.accuracy=0.75\\n'\n")
+        (repository / "train.sh").write_text("printf 'baseline-start\\n'\nsleep \"${1:-3}\"\nprintf 'metric.accuracy=0.75\\n'\nexit \"${2:-0}\"\n")
         git("add", ".")
         git("commit", "-qm", "baseline")
         status, project = request("POST", "/api/projects", {"name": "Core baseline", "path": str(repository),
@@ -141,6 +142,72 @@ with tempfile.TemporaryDirectory(prefix="trainerbuddy-core-") as temporary:
         assert "metric.accuracy=0.75" in log, log
         assert len(request("GET", f"/api/projects/{project_id}/runs")[1]["runs"]) == 1
         print("PASS pinned Linux research core: identity/protocol, attachment authentication, real Git experiment, native Local Engine/wrapper execution, detach/reattach, one original run and collected log")
+
+        def submit_case(title, run_command):
+            before = {r["id"] for r in request("GET", f"/api/projects/{project_id}/runs")[1]["runs"]}
+            command("create-experiment", project_id, "--baseline", "--title", title, "--run-command", run_command)
+            experiments = request("GET", f"/api/projects/{project_id}/experiments")[1]["experiments"]
+            experiment = next(e for e in experiments if e["title"] == title)
+            command("exp", "run", experiment["id"], "--backend", "local")
+            runs = request("GET", f"/api/projects/{project_id}/runs")[1]["runs"]
+            added = [r for r in runs if r["id"] not in before]
+            assert len(added) == 1, added
+            return experiment["id"], added[0]["id"]
+
+        def await_run(run_id, expected, timeout=60):
+            deadline = time.monotonic() + timeout
+            while time.monotonic() < deadline:
+                status, value = request("GET", f"/api/runs/{run_id}")
+                assert status == 200, (status, value)
+                run = value["run"]
+                if run["status"] in expected:
+                    return run
+                assert run["status"] not in ("done", "failed", "cancelled", "lost"), run
+                time.sleep(0.2)
+            raise RuntimeError("Run did not reach expected state: " + json.dumps(run))
+
+        _, recovery_run = submit_case("Restart recovery", "bash train.sh 20")
+        await_run(recovery_run, ("running",))
+        # Kill only the server whose descriptor AND executable identify our copied binary.
+        descriptors = [json.loads(p.read_text()) for p in Path(f"/tmp/orx-{os.geteuid()}").glob("*.server.json")]
+        servers = [d for d in descriptors if d.get("instanceId") == instance or d.get("port") == descriptor["port"]]
+        assert len(servers) == 1, descriptors
+        server_pid = servers[0]["pid"]
+        assert Path(os.readlink(f"/proc/{server_pid}/exe")).resolve() == binary.resolve()
+        os.kill(server_pid, signal.SIGKILL)
+        attachment.stdin.close()
+        attachment.wait(timeout=10)
+        attachment = None
+        connection.close()
+        descriptor = marked(command("remote-host", "ensure"))
+        assert descriptor["instanceId"] != instance, "Crash recovery must start a new server instance"
+        instance = descriptor["instanceId"]
+        token = secrets.token_hex(32)
+        attachment = subprocess.Popen([str(binary), "--no-telemetry", "remote-host", "attach", "--expected-instance", instance],
+                                      env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        attachment.stdin.write(token + "\n")
+        attachment.stdin.flush()
+        assert attachment.stdout.readline().strip() == "ORX_REMOTE_ATTACHED=1"
+        connection = http.client.HTTPConnection("127.0.0.1", descriptor["port"], timeout=15)
+        await_run(recovery_run, ("done",))
+        recovered_log = command("logs", recovery_run)
+        assert recovered_log.count("baseline-start") == 1, recovered_log
+        assert "metric.accuracy=0.75" in recovered_log, recovered_log
+        assert len(request("GET", f"/api/projects/{project_id}/runs")[1]["runs"]) == 2
+        print("PASS server crash/restart: original Run completes, one launch marker, no duplicate Run", flush=True)
+
+        cancel_experiment, cancel_run = submit_case("Cancellation", "bash train.sh 120")
+        await_run(cancel_run, ("running",))
+        command("exp", "cancel", cancel_experiment)
+        await_run(cancel_run, ("cancelled",))
+        assert "metric.accuracy=0.75" not in command("logs", cancel_run)
+        print("PASS cancellation: running experiment becomes cancelled without success metric", flush=True)
+
+        _, failed_run = submit_case("Nonzero exit", "bash train.sh 0 7")
+        failed = await_run(failed_run, ("failed",))
+        assert failed.get("exitCode") == 7, failed
+        assert "baseline-start" in command("logs", failed_run)
+        print("PASS failure evidence: nonzero exit 7 is failed and logs remain readable", flush=True)
     finally:
         heartbeat_stop.set()
         if attachment:

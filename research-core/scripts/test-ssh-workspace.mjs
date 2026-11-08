@@ -2,9 +2,9 @@
 import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { createInterface } from 'node:readline';
-import { copyFile, mkdir, mkdtemp, readFile, readdir, writeFile, rm } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, readFile, readdir, writeFile, rm, realpath, symlink, unlink } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
-import { root, cache, rustEnv, linuxPath } from './common.mjs';
+import { root, cache, rustEnv, linuxPath, lock, patchesSha256 } from './common.mjs';
 import { verifyAgentExperiment } from './verify-agent-experiment.mjs';
 
 const exec = promisify(execFile);
@@ -12,6 +12,22 @@ const tests = resolve(cache, 'tests');
 await mkdir(tests, { recursive: true });
 const folder = await mkdtemp(resolve(tests, 'ssh-workspace-'));
 assert.equal(dirname(folder), tests);
+const argument = name => {
+  const index = process.argv.indexOf(name);
+  if (index < 0) return undefined;
+  assert(process.argv[index + 1] && !process.argv[index + 1].startsWith('--'), 'Missing value for ' + name);
+  return resolve(process.argv[index + 1]);
+};
+const codexBinary = argument('--codex-binary');
+const preparedAgentHome = argument('--agent-home');
+const nativeHome = resolve(folder, 'local-data/agents/codex');
+if (preparedAgentHome) {
+  const canonical = await realpath(preparedAgentHome);
+  assert(canonical.toLowerCase().startsWith((await realpath(tests)).toLowerCase() + '\\'),
+    'Only an isolated research test Agent home may be reused');
+  await mkdir(dirname(nativeHome), { recursive: true });
+  await symlink(canonical, nativeHome, 'junction');
+}
 const localBinary = resolve(folder, 'orx.exe');
 await copyFile(resolve(root, 'research-core/dist/windows-x86_64/orx.exe'), localBinary);
 const fixture = spawn('wsl.exe', ['-d', 'docker-desktop', '-e',
@@ -24,6 +40,7 @@ let core;
 let succeeded = false;
 const coreEnv = { ...rustEnv, ORX_DATA_DIR: resolve(folder, 'local-data'), ORX_CACHE_DIR: resolve(folder, 'local-cache'),
   XDG_CONFIG_HOME: resolve(folder, 'local-config'), ORX_RUN_ENGINE: '1', ORX_SSH_CONFIG: resolve(folder, 'ssh_config') };
+if (codexBinary) coreEnv.PATH = dirname(codexBinary) + ';' + (coreEnv.PATH ?? process.env.Path ?? '');
 const delay = ms => new Promise(done => setTimeout(done, ms));
 async function until(get, label, timeout = 60000) {
   const deadline = Date.now() + timeout;
@@ -131,7 +148,19 @@ try {
     return state.status === 'disconnected' && state.error;
   }, 'failed authentication');
   console.log('PASS real SSH workspace: native gateway/attachment, remote identity/protocol/Engine, real Git/Local Run across detach, one Run with logs, same-instance reattach, wrong key rejected');
-  if (process.argv.includes('--agent')) await verifyAgentExperiment({ api, folder, until });
+  if (process.argv.includes('--agent')) {
+    const evidence = await verifyAgentExperiment({ api, folder, until, codexBinary, nativeHome });
+    const logs = await exec(localBinary, ['--no-telemetry', 'logs', evidence.runId],
+      { cwd: folder, env: coreEnv, windowsHide: true, timeout: 30000 });
+    assert.match(logs.stdout, /metric.fixture=1/, 'Engine logs must independently confirm the reported metric');
+    const evidenceRoot = resolve(cache, 'acceptance');
+    await mkdir(evidenceRoot, { recursive: true });
+    const evidencePath = resolve(evidenceRoot, 'agent-' + evidence.runId + '.json');
+    await writeFile(evidencePath, JSON.stringify({ ...evidence, verifiedAt: new Date().toISOString(),
+      upstreamCommit: lock.commit, patchesSha256, fixtureMetric: 'metric.fixture=1',
+      engineLogsVerified: true, realTraining: false }, null, 2) + '\n');
+    console.log('Agent acceptance evidence: ' + evidencePath);
+  }
   succeeded = true;
 } catch (error) {
   console.error('SSH workspace verification failed: ' + error.message);
@@ -141,6 +170,7 @@ try {
   await exec(localBinary, ['ssh-service', 'stop'],
     { cwd: root, env: coreEnv, windowsHide: true, timeout: 15000 }).catch(error => console.error('Test SSH service cleanup: ' + error.message));
   await stop(fixture, 'stop\n');
+  if (preparedAgentHome) await unlink(nativeHome);
   if (succeeded) await rm(folder, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }).catch(() => console.error('Test artifacts retained: ' + folder));
   else console.error('Test artifacts retained for diagnosis: ' + folder);
 }
