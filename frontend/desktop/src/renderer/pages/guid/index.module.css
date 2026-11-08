@@ -8,10 +8,25 @@
 
 .heroHeader {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 }
+
+.researchEyebrow { color: var(--color-text-3); font-size: 9px; letter-spacing: 2px; margin-bottom: 12px; }
+.researchTitle { margin: 0; font-size: clamp(22px, 2.4vw, 30px); font-weight: 600; letter-spacing: -.6px; color: var(--text-primary); text-align: center; }
+.researchSubtitle { color: var(--color-text-3); font-size: 12px; line-height: 1.8; text-align: center; margin: 10px 0 0; }
+.researchStarters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 20px; }
+.researchStarter { display: flex; align-items: flex-start; gap: 11px; border: 1px solid var(--color-border-2); border-radius: 9px; padding: 15px; text-align: start; background: var(--bg-base); color: var(--text-primary); font: inherit; cursor: pointer; transition: border-color .15s, background .15s; }
+.researchStarter:hover { border-color: var(--aou-5); background: var(--bg-hover); }
+.researchStarter:focus-visible { outline: 2px solid var(--aou-6); outline-offset: 3px; }
+.researchStarter strong { display: block; font-size: 12px; font-weight: 500; }
+.researchStarter small { display: block; font-size: 10px; color: var(--color-text-3); margin-top: 5px; line-height: 1.6; }
+.researchIcon { display: grid; place-items: center; width: 27px; height: 29px; flex-shrink: 0; border-radius: 6px; background: var(--aou-1); color: var(--aou-7); font-size: 18px; }
+.researchArrow { margin-inline-start: auto; color: var(--color-text-4); font-size: 12px; }
+@media (max-width: 600px) { .researchStarters { grid-template-columns: 1fr; } .researchStarter { padding: 12px; } }
+@media (prefers-reduced-motion: reduce) { .researchStarter { transition: none; } }
 
 .assistantPromptHint {
   color: var(--color-text-3);
@@ -33,7 +48,7 @@
 .guidInputInner {
   background: var(--bg-base, #fff);
   border: 1px solid var(--color-border-3);
-  border-radius: 24px;
+  border-radius: 12px;
   box-sizing: border-box;
 }
 
@@ -432,14 +447,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 10px;
+  justify-content: flex-start;
+  overflow-y: auto;
+  padding: clamp(28px, 8vh, 80px) 10px 110px;
   position: relative;
 }
 
 /* 整体内容块略往上移，减轻「重心偏下」的感觉 */
 .guidContainer .guidLayout {
-  margin-top: -5vh;
+  margin-top: 0;
 }
 
 /* Agent 选中时：先放大再回落至略大（pop 动效） */
@@ -487,7 +503,10 @@
 
 /* 底部快捷按钮：基础间距 + 安全区 */
 .guidQuickActions {
-  bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+  position: static;
+  transform: none;
+  margin-top: 36px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 @media (max-width: 768px) {

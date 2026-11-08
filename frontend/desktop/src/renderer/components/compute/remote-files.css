@@ -1,0 +1,18 @@
+.remote-files { min-width: 0; color: var(--color-text-1); }
+.remote-files-toolbar { display: flex; gap: 8px; margin-bottom: 10px; }
+.remote-files-path { display: flex; flex-wrap: wrap; gap: 3px; font-size: 12px; overflow-wrap: anywhere; }
+.remote-files-path button { border: 0; background: transparent; color: var(--color-text-2); padding: 2px; cursor: pointer; text-align: start; overflow-wrap: anywhere; }
+.remote-files-path button:hover { color: rgb(var(--primary-6)); text-decoration: underline; }
+.remote-files-note { color: var(--color-text-3); font-size: 12px; line-height: 1.8; }
+.remote-files-list { border-top: 1px solid var(--color-border-2); }
+.remote-file-row { display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 4px; border: 0; border-bottom: 1px solid var(--color-border-1); color: var(--color-text-1); background: transparent; text-align: start; cursor: pointer; }
+.remote-file-row:hover { background: var(--color-fill-2); }
+.remote-file-row:disabled { opacity: .5; cursor: default; }
+.remote-file-row small { flex-shrink: 0; font-size: 11px; color: var(--color-text-3); }
+.remote-file-name { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 12px; }
+.remote-file-text { margin: 0; max-height: 65vh; overflow: auto; font-size: 12px; line-height: 1.7; white-space: pre; background: var(--color-fill-1); padding: 12px; }
+.remote-file-image { display: block; max-width: 100%; max-height: 65vh; margin: auto; object-fit: contain; }
+.remote-file-download { margin-inline-end: 16px; color: rgb(var(--primary-6)); }
+.project-file-sources { display: flex; gap: 6px; margin: 0 17px 14px; }
+.project-file-sources button[aria-pressed='true'] { background: var(--color-fill-3); color: rgb(var(--primary-6)); }
+.project-remote-files { padding: 0 17px; }

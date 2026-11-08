@@ -42,7 +42,9 @@ export function getPlatformServices(): IPlatformServices {
         if (!app.isPackaged) {
           const devAppName = getDevAppName();
           app.setName(devAppName);
-          app.setPath('userData', path.join(path.dirname(app.getPath('userData')), devAppName));
+          const explicitDataDir = process.env.TRAINERBUDDY_DESKTOP_DATA_DIR ||
+            (process.env.UBIDBUDDY_E2E_TEST === '1' ? process.env.UBIDBUDDY_E2E_USER_DATA_DIR : undefined);
+          app.setPath('userData', explicitDataDir || path.join(path.dirname(app.getPath('userData')), devAppName));
         }
         // Typed as IPlatformPaths so tsc enforces completeness: any new method
         // added to the interface will cause a compile error here if omitted below.

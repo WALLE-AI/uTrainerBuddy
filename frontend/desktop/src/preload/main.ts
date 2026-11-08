@@ -11,6 +11,7 @@ import { ADAPTER_BRIDGE_EVENT_KEY } from '../common/adapter/constant';
  * @description 注入到renderer进程中, 用于与main进程通信
  * */
 contextBridge.exposeInMainWorld('electronAPI', {
+  openResearchWorkspace: () => ipcRenderer.invoke('research-core:open-workspace'),
   emit: (name: string, data: unknown) => {
     return ipcRenderer
       .invoke(
@@ -53,6 +54,7 @@ const initialLanguage = ipcRenderer.sendSync('get-initial-language') as string |
 const backendStartupFailed = ipcRenderer.sendSync('get-backend-startup-failed') as boolean;
 const backendStartupFailure = ipcRenderer.sendSync('get-backend-startup-failure') as unknown;
 contextBridge.exposeInMainWorld('__backendPort', backendPort > 0 ? backendPort : 0);
+contextBridge.exposeInMainWorld('__trainerBackend', ipcRenderer.sendSync('get-trainer-backend'));
 contextBridge.exposeInMainWorld('__initialLanguage', initialLanguage ?? null);
 contextBridge.exposeInMainWorld('__ubidbuddyE2ETest', process.env.UBIDBUDDY_E2E_TEST === '1');
 contextBridge.exposeInMainWorld('__backendStartupFailed', backendStartupFailed === true);

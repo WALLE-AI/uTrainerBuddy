@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none" role="img" aria-labelledby="title">
+  <title id="title">uTrainerBuddy monochrome mark</title>
+  <g color="#6574A7">
+    <path d="M76 83V139a52 52 0 0 0 104 0V70m-20 20 20-20 20 20" stroke="currentColor" stroke-width="21" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="111" cy="122" r="8" fill="currentColor"/>
+    <circle cx="143" cy="122" r="8" fill="currentColor"/>
+  </g>
+</svg>

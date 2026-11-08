@@ -21,6 +21,7 @@ function getBaseUrl(): string {
 async function fetchJson<T>(method: string, path: string, body?: unknown): Promise<T> {
   const url = `${getBaseUrl()}${path}`;
   const headers: Record<string, string> = {};
+  if (typeof window !== 'undefined' && window.__trainerBackend) headers.Authorization = `Bearer ${window.__trainerBackend.token}`;
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json';
   }

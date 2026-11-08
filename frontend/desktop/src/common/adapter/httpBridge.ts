@@ -15,6 +15,7 @@ import { refreshSession, WS_CLOSE_POLICY_VIOLATION } from './sessionRefresh';
 declare global {
   interface Window {
     __backendPort?: number;
+    __trainerBackend?: { token: string; instanceId: string } | null;
   }
 }
 
@@ -210,9 +211,11 @@ function sendHttpRequest(
   body?: unknown
 ): Promise<Response> {
   const url = `${getBaseUrl()}${path}`;
+  const backend = typeof window !== 'undefined' ? window.__trainerBackend :
+    (globalThis as typeof globalThis & { __trainerBackend?: { token: string } }).__trainerBackend;
   return fetch(url, {
     method,
-    headers,
+    headers: { ...headers, ...(backend ? { Authorization: `Bearer ${backend.token}` } : {}) },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 }
@@ -437,6 +440,7 @@ function ensureWs(): void {
   const current = ws;
 
   current.addEventListener('open', () => {
+    if (window.__trainerBackend) current.send(JSON.stringify({ type: 'authenticate', token: window.__trainerBackend.token }));
     console.debug('[ensureWs] CONNECTED');
     const isReconnect = wsHasOpened;
     wsHasOpened = true;

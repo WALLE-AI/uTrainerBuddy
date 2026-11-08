@@ -1,0 +1,32 @@
+{
+  "id": "0001-consistent-ssh-config",
+  "upstream_commit": "52a3ca22971f4042da4c73f1f3fca8e04aca9089",
+  "reason": "Use the same ORX_SSH_CONFIG for dashboard host listing/editing and transport resolution, preserving default user config and upstream Include semantics.",
+  "files": [
+    {
+      "path": "src/commands/up/compute_settings.rs",
+      "replacements": [
+        {
+          "old": "    ssh_hosts_in(&home)\n}\n\n/// OpenSSH's",
+          "new": "    match std::env::var_os(\"ORX_SSH_CONFIG\") {\n        Some(config) => ssh_hosts_from(&home, std::path::Path::new(&config)),\n        None => ssh_hosts_in(&home),\n    }\n}\n\n/// OpenSSH's"
+        },
+        {
+          "old": "fn ssh_hosts_in(home: &std::path::Path) -> Vec<Value> {\n    let mut reader",
+          "new": "fn ssh_hosts_in(home: &std::path::Path) -> Vec<Value> {\n    ssh_hosts_from(home, &home.join(\".ssh\").join(\"config\"))\n}\n\nfn ssh_hosts_from(home: &std::path::Path, config: &std::path::Path) -> Vec<Value> {\n    let mut reader"
+        },
+        {
+          "old": "    reader.read_file(&home.join(\".ssh\").join(\"config\"));\n    reader.hosts",
+          "new": "    reader.read_file(config);\n    reader.hosts"
+        },
+        {
+          "old": "pub(super) fn ssh_config_path() -> Result<std::path::PathBuf> {\n    Ok(dirs::home_dir()",
+          "new": "pub(super) fn ssh_config_path() -> Result<std::path::PathBuf> {\n    if let Some(config) = std::env::var_os(\"ORX_SSH_CONFIG\") {\n        return Ok(std::path::PathBuf::from(config));\n    }\n    Ok(dirs::home_dir()"
+        },
+        {
+          "old": "Err(bad_request(\"Choose a host from ~/.ssh/config.\"))",
+          "new": "Err(bad_request(\"Choose a host from the configured SSH file.\"))"
+        }
+      ]
+    }
+  ]
+}

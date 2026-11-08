@@ -21,6 +21,7 @@ import GuidActionRow from './components/GuidActionRow';
 import GuidInputCard from './components/GuidInputCard';
 import GuidModelSelector from './components/GuidModelSelector';
 import QuickActionButtons from './components/QuickActionButtons';
+import ResearchStarters from './components/ResearchStarters';
 import FeedbackReportModal from '@/renderer/components/settings/SettingsModal/contents/FeedbackReportModal';
 import { useGuidAssistantSelection } from './hooks/useGuidAssistantSelection';
 import { useGuidInput } from './hooks/useGuidInput';
@@ -62,6 +63,7 @@ const GuidPage: React.FC = () => {
 
   const localeKey = resolveLocaleKey(i18n.language);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [starterFocusKey, setStarterFocusKey] = useState<string>();
 
   // Open external link
   const openLink = useCallback(async (url: string) => {
@@ -669,7 +671,9 @@ const GuidPage: React.FC = () => {
       <div ref={guidContainerRef} className={styles.guidContainer}>
         <div className={styles.guidLayout}>
           <div className={styles.heroHeader}>
-            <p className='text-2xl font-semibold mb-0 text-t-primary text-center'>{t('conversation.welcome.title')}</p>
+            <span className={styles.researchEyebrow}>RESEARCH WITH YOUR AGENT</span>
+            <h1 className={styles.researchTitle}>{t('guid.research.heading', { defaultValue: 'What would you like your model to solve?' })}</h1>
+            <p className={styles.researchSubtitle}>{t('guid.research.subtitle', { defaultValue: 'Start with a goal, some data or an idea. Work with Buddy to make verifiable progress.' })}</p>
           </div>
 
           <AssistantSelectionArea
@@ -680,7 +684,8 @@ const GuidPage: React.FC = () => {
           />
 
           <GuidInputCard
-            focusRequestKey={navState?.focusPrefill && navState.prefillPrompt ? location.key : undefined}
+            focusOnMobile={Boolean(starterFocusKey)}
+            focusRequestKey={starterFocusKey || (navState?.focusPrefill && navState.prefillPrompt ? location.key : undefined)}
             input={guidInput.input}
             onInputChange={handleInputChange}
             onKeyDown={handleInputKeyDown}
@@ -702,6 +707,11 @@ const GuidPage: React.FC = () => {
             onSelectWorkspace={(dir) => guidInput.setDir(dir)}
             onClearWorkspace={() => guidInput.setDir('')}
           />
+
+          {!selectedAssistantId && <ResearchStarters onSelect={(prompt) => {
+            guidInput.setInput(draft => appendPromptToDraft(draft, prompt));
+            setStarterFocusKey(crypto.randomUUID());
+          }} />}
 
           {selectedAssistantPrompts.length > 0 ? (
             <div className='mt-18px w-full animate-fade-in ps-20px'>

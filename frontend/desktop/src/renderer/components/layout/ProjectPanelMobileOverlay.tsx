@@ -9,7 +9,7 @@
  * cannot occupy a fixed column, so it renders as a right-side overlay: backdrop +
  * fixed panel + floating collapse handle — mirroring the legacy
  * `MobileWorkspaceOverlay`, hoisted to the Layout level and mounting the
- * self-contained hosted component ({@link ExplorerContainer}).
+ * shared {@link ProjectWorkbench} with the same tabs and context controls.
  *
  * The panel stays mounted and slides off-screen (`translateX(100%)`) when
  * collapsed, so the tree + WS state survive open/close within a mobile session
@@ -18,7 +18,7 @@
 
 import React, { useRef } from 'react';
 
-import { ExplorerContainer } from '@/renderer/pages/conversation/explorer/ExplorerContainer';
+import { ProjectWorkbench } from './ProjectWorkbench';
 
 export type ProjectPanelMobileOverlayProps = {
   projectId: string;
@@ -47,7 +47,9 @@ export const ProjectPanelMobileOverlay: React.FC<ProjectPanelMobileOverlayProps>
         data-explorer-mobile-overlay
         data-mount-id={mountIdRef.current}
         data-collapsed={collapsed ? 'true' : 'false'}
-        className='!bg-1 relative'
+        className='!bg-1 relative trainer-project-workbench'
+        inert={collapsed}
+        aria-hidden={collapsed}
         style={{
           position: 'fixed',
           right: 0,
@@ -61,7 +63,7 @@ export const ProjectPanelMobileOverlay: React.FC<ProjectPanelMobileOverlayProps>
           borderLeft: '1px solid var(--bg-3)',
         }}
       >
-        <ExplorerContainer projectId={projectId} />
+        <ProjectWorkbench key={projectId} projectId={projectId} collapsed={collapsed} onCollapse={onCollapse} />
       </div>
 
       {/* Floating collapse handle */}

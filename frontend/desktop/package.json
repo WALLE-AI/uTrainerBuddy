@@ -9,7 +9,10 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "electron:dev": "electron-vite dev --config electron.vite.config.ts",
+    "electron:dev": "node scripts/electron-dev.mjs",
+    "backend:build": "node ../../backend/scripts/toolchain.mjs build",
+    "backend:test": "node ../../backend/scripts/toolchain.mjs test",
+    "backend:host": "node ../../backend/scripts/build-host.mjs --setup",
     "electron:build": "electron-vite build --config electron.vite.config.ts"
   },
   "dependencies": {

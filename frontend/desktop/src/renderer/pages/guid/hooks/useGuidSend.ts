@@ -101,7 +101,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
 
   const handleSend = useCallback(async () => {
     if (!selectedAssistantId) {
-      return;
+      throw new Error(t('conversation.createFailed'));
     }
 
     const isCustomWorkspace = !!dir;
@@ -172,8 +172,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
 
     if (assistantBackend === 'aionrs') {
       if (!current_model) {
-        Message.warning(t('conversation.noModelConfigured'));
-        return;
+        throw new Error(t('conversation.noModelConfigured'));
       }
       try {
         const conversation = await ipcBridge.conversation.create.invoke({
@@ -194,8 +193,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
         });
 
         if (!conversation || !conversation.id) {
-          Message.error(t('conversation.createFailed'));
-          return;
+          throw new Error(t('conversation.createFailed'));
         }
 
         if (isCustomWorkspace) {
@@ -203,10 +201,10 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
         }
 
         if (assistantConversationId) {
-          await Promise.all([
+          void Promise.all([
             swrMutate(`guid.assistant.detail.${assistantConversationId}.${localeKey}`),
             swrMutate('assistants.list'),
-          ]);
+          ]).catch(error => console.warn('Failed to refresh assistant catalog:', error));
         }
 
         emitter.emit('chat.history.refresh');
@@ -248,8 +246,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
         },
       });
       if (!conversation || !conversation.id) {
-        console.error('Failed to create ACP conversation - conversation object is null or missing id');
-        return;
+        throw new Error(t('conversation.createFailed'));
       }
 
       if (isCustomWorkspace) {
@@ -257,10 +254,10 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
       }
 
       if (assistantConversationId) {
-        await Promise.all([
+        void Promise.all([
           swrMutate(`guid.assistant.detail.${assistantConversationId}.${localeKey}`),
           swrMutate('assistants.list'),
-        ]);
+        ]).catch(error => console.warn('Failed to refresh assistant catalog:', error));
       }
 
       emitter.emit('chat.history.refresh');

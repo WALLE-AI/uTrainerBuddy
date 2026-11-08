@@ -25,3 +25,6 @@ out/
 # repo's history.
 
 /backend/.build/
+/backend/host-binaries/
+/research-core/dist/
+/.tools/

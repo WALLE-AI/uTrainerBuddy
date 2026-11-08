@@ -16,6 +16,7 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type AssistantHomeTabsProps = {
+  expertView?: boolean;
   assistants: AssistantListItem[];
   assistantOrder: readonly string[];
   localeKey: string;
@@ -36,6 +37,7 @@ type AssistantHomeTabsProps = {
 type HomeTab = 'enabled' | 'mine' | 'official';
 
 const AssistantHomeTabs: React.FC<AssistantHomeTabsProps> = ({
+  expertView = false,
   assistants,
   assistantOrder,
   localeKey,
@@ -100,8 +102,8 @@ const AssistantHomeTabs: React.FC<AssistantHomeTabsProps> = ({
         <div className='mx-auto w-full max-w-800px'>
           <SettingsPageHeader
             data-testid='assistants-header'
-            title={t('settings.assistants', { defaultValue: 'Assistants' })}
-            description={t('settings.assistantHomeLeadShort', {
+            title={expertView ? t('guid.experts.title', { defaultValue: 'Experts' }) : t('settings.assistants', { defaultValue: 'Assistants' })}
+            description={expertView ? t('guid.experts.description', { defaultValue: 'Choose an expert with the skills for your work. Configure its capabilities or start a conversation.' }) : t('settings.assistantHomeLeadShort', {
               defaultValue:
                 'Ready-to-work AI experts, preloaded with skills. Enable one and it shows up wherever you pick an assistant.',
             })}
@@ -111,7 +113,7 @@ const AssistantHomeTabs: React.FC<AssistantHomeTabsProps> = ({
                   <AionSearchInput
                     className='shrink-0 w-[200px] hidden md:flex'
                     data-testid='input-search-assistants'
-                    placeholder={t('settings.searchAssistants', {
+                    placeholder={expertView ? t('guid.experts.search', { defaultValue: 'Search experts by name or description' }) : t('settings.searchAssistants', {
                       defaultValue: 'Search assistants by name or description',
                     })}
                     value={searchQuery}
@@ -120,11 +122,11 @@ const AssistantHomeTabs: React.FC<AssistantHomeTabsProps> = ({
                 )}
                 <TalkToButlerButton
                   className='shrink-0'
-                  label={t('settings.createAssistant', { defaultValue: 'Create Assistant' })}
+                  label={expertView ? t('guid.experts.create', { defaultValue: 'Create expert' }) : t('settings.createAssistant', { defaultValue: 'Create Assistant' })}
                   chatLabel={t('settings.talkToButler.createViaChat', { defaultValue: 'Create via chat' })}
                   onManual={onCreate}
                   manualLabel={t('settings.talkToButler.createManually', { defaultValue: 'Create manually' })}
-                  prompt={t('settings.talkToButler.prompt.createAssistant', {
+                  prompt={expertView ? t('guid.experts.createPrompt', { defaultValue: 'Help me create an expert with the skills, instructions and tools needed for my work.' }) : t('settings.talkToButler.prompt.createAssistant', {
                     defaultValue: 'Help me create a new assistant and walk me through setting it up.',
                   })}
                   data-testid='btn-create-assistant'
@@ -139,7 +141,7 @@ const AssistantHomeTabs: React.FC<AssistantHomeTabsProps> = ({
               },
               {
                 key: 'mine',
-                label: t('settings.assistantTabMine', { defaultValue: 'My Assistants' }),
+                label: expertView ? t('guid.experts.mine', { defaultValue: 'My experts' }) : t('settings.assistantTabMine', { defaultValue: 'My Assistants' }),
                 count: counts.mine,
               },
               {

@@ -30,6 +30,10 @@ async function request<T>(
 ): Promise<T> {
   const url = `${baseURL}${path}`;
   const headers: Record<string, string> = { ...options?.headers };
+  const backend = window.__trainerBackend;
+  if (backend && new URL(url, window.location.href).origin === `http://127.0.0.1:${window.__backendPort}`) {
+    headers.Authorization = `Bearer ${backend.token}`;
+  }
   if (body !== undefined) headers['Content-Type'] = 'application/json';
 
   const response = await fetch(url, {

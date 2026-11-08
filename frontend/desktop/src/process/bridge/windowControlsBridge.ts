@@ -13,7 +13,7 @@
  */
 
 import { BrowserWindow } from 'electron';
-import { ipcBridge } from '@/common';
+import { bridge } from '@/common/platform/bridge';
 import { getCloseToTrayEnabled, getIsQuitting } from '@process/utils/tray';
 
 /**
@@ -39,12 +39,12 @@ function resolveControlWindow(): BrowserWindow | null {
 export function registerWindowMaximizeListeners(window: BrowserWindow): void {
   // 当窗口最大化时通知渲染进程 / Notify renderer when window is maximized
   window.on('maximize', () => {
-    ipcBridge.windowControls.maximizedChanged.emit({ is_maximized: true });
+    bridge.buildEmitter<{ is_maximized: boolean }>('windowControls.maximizedChanged').emit({ is_maximized: true });
   });
 
   // 当窗口取消最大化时通知渲染进程 / Notify renderer when window is unmaximized
   window.on('unmaximize', () => {
-    ipcBridge.windowControls.maximizedChanged.emit({ is_maximized: false });
+    bridge.buildEmitter<{ is_maximized: boolean }>('windowControls.maximizedChanged').emit({ is_maximized: false });
   });
 }
 
@@ -57,7 +57,7 @@ export function registerWindowMaximizeListeners(window: BrowserWindow): void {
  */
 export function initWindowControlsBridge(): void {
   // 最小化窗口 / Minimize window
-  ipcBridge.windowControls.minimize.provider(() => {
+  bridge.buildProvider<void, void>('windowControls.minimize').provider(() => {
     const window = resolveControlWindow();
     if (window) {
       window.minimize();
@@ -66,7 +66,7 @@ export function initWindowControlsBridge(): void {
   });
 
   // 最大化窗口 / Maximize window
-  ipcBridge.windowControls.maximize.provider(() => {
+  bridge.buildProvider<void, void>('windowControls.maximize').provider(() => {
     const window = resolveControlWindow();
     if (window) {
       window.maximize();
@@ -75,7 +75,7 @@ export function initWindowControlsBridge(): void {
   });
 
   // 取消最大化窗口 / Unmaximize window
-  ipcBridge.windowControls.unmaximize.provider(() => {
+  bridge.buildProvider<void, void>('windowControls.unmaximize').provider(() => {
     const window = resolveControlWindow();
     if (window) {
       window.unmaximize();
@@ -88,7 +88,7 @@ export function initWindowControlsBridge(): void {
   // Honor close-to-tray here so we hide instead of destroying the window —
   // relying only on the BrowserWindow 'close' interceptor is not enough on
   // all Linux desktop environments when the close originates from renderer IPC.
-  ipcBridge.windowControls.close.provider(() => {
+  bridge.buildProvider<void, void>('windowControls.close').provider(() => {
     const window = resolveControlWindow();
     if (!window) {
       return Promise.resolve();
@@ -102,7 +102,7 @@ export function initWindowControlsBridge(): void {
   });
 
   // 获取窗口是否最大化状态 / Get window maximized state
-  ipcBridge.windowControls.isMaximized.provider(() => {
+  bridge.buildProvider<boolean, void>('windowControls.isMaximized').provider(() => {
     const window = resolveControlWindow();
     return Promise.resolve(window?.isMaximized() ?? false);
   });

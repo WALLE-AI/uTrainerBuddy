@@ -8,15 +8,13 @@
  * Layout-level Project Panel host (stage3 FULL / P1–P4). This is the project's
  * right-side panel host: it owns the column's width, border and lifecycle, and
  * mounts a self-contained project component inside. The titlebar owns the desktop
- * collapse control. For this round
- * the hosted component is the Explorer ({@link ExplorerContainer}); the host is
+ * collapse control. The hosted component is {@link ProjectWorkbench}; the host is
  * named generically (not `ProjectExplorerColumn`) so future project-scoped
  * components (source-control, kanban, …) can mount through the same seam without
  * re-architecting the host — no plugin framework is introduced this round.
  *
- * Seam: the host passes only `projectId` down; the component self-manages its
- * content (data, tree, actions). Host chrome (the drag handle) is the host's
- * concern, never the component's.
+ * The workbench manages conversation context, tabs and the persistent Explorer.
+ * Width and collapse callbacks remain owned by the Layout host.
  *
  * Rendered as a sibling of the route `<Outlet>`, above the per-conversation
  * subtree, so switching conversations within the same project does NOT remount it
@@ -27,8 +25,9 @@
  */
 
 import React, { useRef } from 'react';
+import { dispatchWorkspaceToggleEvent } from '@renderer/utils/workspace/workspaceEvents';
 
-import { ExplorerContainer } from '@/renderer/pages/conversation/explorer/ExplorerContainer';
+import { ProjectWorkbench } from './ProjectWorkbench';
 import { useCurrentProject } from '@/renderer/pages/conversation/explorer/currentProjectStore';
 
 export type ProjectPanelHostProps = {
@@ -38,9 +37,11 @@ export type ProjectPanelHostProps = {
   collapsed: boolean;
   /** Left-edge resize handle from Layout's `useResizableSplit`. */
   dragHandle?: React.ReactNode;
+  onToggleWidth?: () => void;
+  expanded?: boolean;
 };
 
-export const ProjectPanelHost: React.FC<ProjectPanelHostProps> = ({ widthPx, collapsed, dragHandle }) => {
+export const ProjectPanelHost: React.FC<ProjectPanelHostProps> = ({ widthPx, collapsed, dragHandle, onToggleWidth, expanded }) => {
   const projectId = useCurrentProject();
   const mountIdRef = useRef<string>('');
   if (mountIdRef.current === '') mountIdRef.current = `pec-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -54,15 +55,16 @@ export const ProjectPanelHost: React.FC<ProjectPanelHostProps> = ({ widthPx, col
       data-explorer-column
       data-mount-id={mountIdRef.current}
       data-collapsed={collapsed ? 'true' : 'false'}
-      className='!bg-1 h-full flex-shrink-0 overflow-hidden relative'
+      inert={collapsed}
+      aria-hidden={collapsed}
+      className='!bg-1 h-full flex-shrink-0 overflow-hidden relative trainer-project-workbench'
       style={{
         width: collapsed ? '0px' : `${widthPx}px`,
         borderLeft: collapsed ? 'none' : '1px solid var(--bg-3)',
       }}
     >
       {!collapsed && dragHandle}
-      {/* Hosted project component (this round: Explorer). Seam = projectId only. */}
-      <ExplorerContainer projectId={projectId} />
+      <ProjectWorkbench key={projectId} projectId={projectId} collapsed={collapsed} onCollapse={dispatchWorkspaceToggleEvent} onToggleWidth={onToggleWidth} expanded={expanded} />
     </div>
   );
 };

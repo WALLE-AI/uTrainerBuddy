@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Minus, CloseSmall } from '@icon-park/react';
-import { ipcBridge } from '@/common';
+import { onWindowMaximizedChanged, windowControl } from '@renderer/services/windowControls';
 
 const WindowMaximizeIcon: React.FC<{ size?: number }> = ({ size = 14 }) => (
   <svg width={size} height={size} viewBox='0 0 18 18' fill='none' stroke='currentColor' strokeWidth='1.4'>
@@ -27,11 +27,10 @@ const WindowControls: React.FC = () => {
     let isMounted = true;
 
     // 获取初始窗口状态 / Get initial window state
-    ipcBridge.windowControls.isMaximized
-      .invoke()
+    windowControl('isMaximized')
       .then((state) => {
         if (isMounted) {
-          setIsMaximized(state);
+          setIsMaximized(state === true);
         }
       })
       .catch(() => {
@@ -41,7 +40,7 @@ const WindowControls: React.FC = () => {
       });
 
     // 订阅窗口最大化状态变化 / Subscribe to window maximize state changes
-    const unsubscribe = ipcBridge.windowControls.maximizedChanged.on(({ is_maximized }) => {
+    const unsubscribe = onWindowMaximizedChanged((is_maximized) => {
       if (isMounted) {
         setIsMaximized(is_maximized);
       }
@@ -60,18 +59,18 @@ const WindowControls: React.FC = () => {
 
   // 以下处理三种窗口按钮点击事件 / Handle minimize, maximize/restore, and close button events
   const handleMinimize = () => {
-    void ipcBridge.windowControls.minimize.invoke();
+    void windowControl('minimize').catch(console.error);
   };
 
   const handleClose = () => {
-    void ipcBridge.windowControls.close.invoke();
+    void windowControl('close').catch(console.error);
   };
 
   const handleToggleMaximize = () => {
     if (isMaximized) {
-      void ipcBridge.windowControls.unmaximize.invoke();
+      void windowControl('unmaximize').then(() => setIsMaximized(false)).catch(console.error);
     } else {
-      void ipcBridge.windowControls.maximize.invoke();
+      void windowControl('maximize').then(() => setIsMaximized(true)).catch(console.error);
     }
   };
 

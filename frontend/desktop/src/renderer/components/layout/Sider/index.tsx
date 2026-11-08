@@ -7,8 +7,10 @@ import { useAuth } from '@renderer/hooks/context/AuthContext';
 import { useLayoutContext } from '@renderer/hooks/context/LayoutContext';
 import { blurActiveElement } from '@renderer/utils/ui/focus';
 import { useThemeContext } from '@renderer/hooks/context/ThemeContext';
-import { SiderToolbar, SiderSearchEntry, SiderScheduledEntry, SiderAssistantEntry } from './SiderNav';
+import { SiderToolbar, SiderSearchEntry, SiderScheduledEntry, SiderExpertEntry } from './SiderNav';
 import SiderFooter from './SiderFooter';
+import ComputeConnectionEntry from '@/renderer/components/compute/ComputeConnectionEntry';
+import ResearchWorkspaceEntry from '@/renderer/components/compute/ResearchWorkspaceEntry';
 import TeamSiderSection from './TeamSiderSection';
 import siderStyles from './Sider.module.css';
 
@@ -96,21 +98,19 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
     }
   };
 
-  const handleAssistantClick = () => {
+  const handleQuickThemeToggle = () => {
+    void setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
+  const handleExpertClick = () => {
     cleanupSiderTooltips();
     blurActiveElement();
     closePreview();
     setIsBatchMode(false);
-    Promise.resolve(navigate('/assistants')).catch((error) => {
+    Promise.resolve(navigate('/experts')).catch((error) => {
       console.error('Navigation failed:', error);
     });
-    if (onSessionClick) {
-      onSessionClick();
-    }
-  };
-
-  const handleQuickThemeToggle = () => {
-    void setTheme(theme === 'dark' ? 'light' : 'dark');
+    onSessionClick?.();
   };
 
   const handleLogout = useCallback(async () => {
@@ -200,14 +200,15 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
                 onSessionClick={onSessionClick}
               />
             )}
-            {/* Assistant nav entry - fixed above Scheduled */}
-            <SiderAssistantEntry
+            <SiderExpertEntry
               isMobile={isMobile}
-              isActive={pathname.startsWith('/assistants')}
+              isActive={pathname === '/experts' || pathname === '/assistants'}
               collapsed={collapsed}
               siderTooltipProps={siderTooltipProps}
-              onClick={handleAssistantClick}
+              onClick={handleExpertClick}
             />
+            <ResearchWorkspaceEntry collapsed={collapsed} />
+            <ComputeConnectionEntry collapsed={collapsed} />
             {/* Scheduled tasks nav entry - fixed above scroll */}
             <SiderScheduledEntry
               isMobile={isMobile}

@@ -3,17 +3,8 @@
  * Copyright 2025 uBidBuddy
  * SPDX-License-Identifier: Apache-2.0
  *
- * Electron main process entry for ubidbuddy-frontend's desktop shell.
- *
- * This is a trimmed port of uBidBuddy's own `packages/desktop/src/index.ts`:
- * window/tray/menu/zoom/bounds, deep links, single-instance lock, auto-update,
- * native dialogs, notifications, theme sync, feedback, and the desktop-pet
- * overlay are all kept. Everything about spawning/managing the aioncore
- * backend subprocess (BackendLifecycleManager, binaryResolver, backend
- * migrations/admin-user bootstrap, the CDP-bridge-for-agent-browser wiring,
- * reset-password CLI mode) and the webui-LAN-sharing bridge (which only makes
- * sense once an aioncore instance is already running) have been removed.
- * Crash reporting (Sentry) was dropped too — see ubidbuddy-frontend's port plan.
+ * uTrainerBuddy desktop shell. Owns the local Rust backend lifecycle;
+ * the backend hosts native agent engines while the existing renderer handles UI.
  */
 
 // configureChromium sets app name (dev isolation) and Chromium flags — must run before
@@ -33,6 +24,8 @@ import { initMainAdapterWithWindow } from './common/adapter/main';
 import { ipcBridge } from './common';
 import { initializeProcess } from './process';
 import { installQuitCleanup } from './process/startup/quitCleanup';
+import { BackendLifecycleManager } from './process/backend/BackendLifecycleManager';
+import { ResearchCoreGateway } from './process/backend/ResearchCoreGateway';
 import { ProcessConfig } from './process/utils/initStorage';
 import { registerWindowMaximizeListeners } from '@process/bridge';
 import './process/bridge/feedbackBridge';
@@ -168,23 +161,36 @@ let appReadyDone = false;
 
 let mainWindow: BrowserWindow;
 
-// No aioncore backend is spawned here. `UBIDBUDDY_BACKEND_PORT` lets a developer
-// point the renderer at an already-running backend (self-hosted aioncore, or
-// AionUi/packages/web-host); left unset, httpBridge.ts's own 13400 fallback
-// applies and API calls simply fail, which is expected without a backend.
-ipcMain.on('get-backend-port', (event) => {
-  event.returnValue = Number(process.env.UBIDBUDDY_BACKEND_PORT) || 0;
+let trainerBackend: BackendLifecycleManager | undefined;
+let researchGateway: ResearchCoreGateway | undefined;
+ipcMain.handle('research-core:open-workspace', async (event) => {
+  if (!mainWindow || mainWindow.isDestroyed() || event.sender !== mainWindow.webContents || event.senderFrame !== mainWindow.webContents.mainFrame) return { success: false, code: 'RESEARCH_CALLER_DENIED' };
+  try {
+    const researchRoot = app.isPackaged ? path.join(process.resourcesPath, 'research-core') : path.resolve(process.cwd(), '../../research-core');
+    researchGateway ??= new ResearchCoreGateway({
+      packageDir: process.env.TRAINERBUDDY_RESEARCH_CORE_DIR || path.join(researchRoot, 'dist/windows-x86_64'),
+      dataDir: path.join(path.dirname(process.env.TRAINERBUDDY_DATA_DIR || path.join(app.getPath('userData'), 'backend')), 'research-gateway'),
+      configDir: path.join(path.dirname(process.env.TRAINERBUDDY_DATA_DIR || path.join(app.getPath('userData'), 'backend')), 'research-gateway-config'),
+    });
+    await researchGateway.open();
+    return { success: true };
+  } catch (error) {
+    const code = error instanceof Error && /^RESEARCH_[A-Z_]+$/.test(error.message) ? error.message : 'RESEARCH_START_FAILED';
+    return { success: false, code };
+  }
 });
-
-// No backend process is spawned in this build, so it never "fails to start" —
-// these two report a permanent non-failure state. Without handlers, the
-// preload's sendSync calls block the renderer's main thread forever (no
-// listener means no reply), leaving the window blank and unresponsive.
+ipcMain.on('get-backend-port', (event) => {
+  event.returnValue = trainerBackend?.port ?? 0;
+});
+ipcMain.on('get-trainer-backend', (event) => {
+  const isMainFrame = mainWindow && !mainWindow.isDestroyed() && event.sender === mainWindow.webContents && event.senderFrame === mainWindow.webContents.mainFrame;
+  event.returnValue = isMainFrame && trainerBackend?.port ? { token: trainerBackend.token, instanceId: trainerBackend.instanceId } : null;
+});
 ipcMain.on('get-backend-startup-failed', (event) => {
-  event.returnValue = false;
+  event.returnValue = !!trainerBackend?.failure;
 });
 ipcMain.on('get-backend-startup-failure', (event) => {
-  event.returnValue = null;
+  event.returnValue = trainerBackend?.failure ?? null;
 });
 
 let rendererInitialLanguage: string | null = null;
@@ -438,19 +444,33 @@ const handleAppReady = async (): Promise<void> => {
     loadSavedWindowBounds(undefined);
   }
 
-  // 初始化关闭到托盘设置 / Initialize close-to-tray setting
+  trainerBackend = new BackendLifecycleManager({
+    binary: process.env.TRAINERBUDDY_BACKEND_BIN || (app.isPackaged
+      ? path.join(process.resourcesPath, 'backend', process.platform === 'win32' ? 'trainerbuddy-backend.exe' : 'trainerbuddy-backend')
+      : path.resolve(process.cwd(), '../../backend/target/debug', process.platform === 'win32' ? 'trainerbuddy-backend.exe' : 'trainerbuddy-backend')),
+    dataDir: process.env.TRAINERBUDDY_DATA_DIR || path.join(app.getPath('userData'), 'backend'),
+    origin: process.env.ELECTRON_RENDERER_URL ? new URL(process.env.ELECTRON_RENDERER_URL).origin : 'null',
+    onFailure: failure => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('backend-startup-state', failure); },
+  });
+  try {
+    await trainerBackend.start();
+    const globals = globalThis as typeof globalThis & { __backendPort?: number; __trainerBackend?: { token: string } };
+    globals.__backendPort = trainerBackend.port;
+    globals.__trainerBackend = { token: trainerBackend.token };
+    mark('trainerBackendReady');
+  }
+  catch (error) { console.error('[uTrainerBuddy] Backend startup failed:', error); }
+
+  // Read persisted desktop preferences after the backend is authenticated.
   if (isE2ETestMode) {
     setCloseToTrayEnabled(false);
     destroyTray();
   } else {
     try {
-      const savedCloseToTray = await readCloseToTraySetting();
-      setCloseToTrayEnabled(savedCloseToTray);
-      if (getCloseToTrayEnabled()) {
-        createOrUpdateTray();
-      }
+      setCloseToTrayEnabled(await readCloseToTraySetting());
+      if (getCloseToTrayEnabled()) createOrUpdateTray();
     } catch {
-      // Ignore storage read errors, default to false
+      // Keep the default when backend startup failed.
     }
   }
 
@@ -571,7 +591,7 @@ installQuitCleanup({
   disposeCronResumeListener: () => {
     /* no backend cron-resume listener without a spawned aioncore */
   },
-  stopBackend: () => Promise.resolve(),
+  stopBackend: () => { researchGateway?.detach(); return trainerBackend?.stop() ?? Promise.resolve(); },
   destroyPetWindow: async () => {
     const { destroyPetWindow } = await import('./process/pet/petManager');
     destroyPetWindow();

@@ -1,0 +1,10 @@
+{
+  "commit": "61f2c06f54a214c0619801476831fc84d9200a5f",
+  "checked_source_links": 1077,
+  "linked_source_files": 342,
+  "report_characters": 49869,
+  "module_groups": 86,
+  "route_decorators": 686,
+  "errors": [],
+  "validation_scope": "source link existence and line bounds, generated source markers, fenced block pairing; no project or GPU execution"
+}

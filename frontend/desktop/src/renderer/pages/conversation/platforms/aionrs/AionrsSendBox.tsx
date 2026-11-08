@@ -243,6 +243,12 @@ const AionrsSendBox: React.FC<{
     []
   );
 
+  useAddEventListener('workbench.reference.append', (text, targetId) => {
+    if (targetId !== conversation_id) return;
+    const previous = contentRef.current;
+    setContentRef.current(previous ? `${previous}\n\n${text}` : text);
+  }, [conversation_id]);
+
   // Shared file handling logic
   const { handleFilesAdded, clearFiles } = useSendBoxFiles({
     atPath,

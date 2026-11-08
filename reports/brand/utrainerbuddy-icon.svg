@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 256 256" fill="none" role="img" aria-labelledby="title description">
+  <title id="title">uTrainerBuddy</title>
+  <desc id="description">A friendly U-shaped companion with an upward training arrow, on an indigo rounded square.</desc>
+  <defs>
+    <linearGradient id="indigo" x1="24" y1="8" x2="230" y2="256" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8490C3"/>
+      <stop offset=".5" stop-color="#6574A7"/>
+      <stop offset="1" stop-color="#465686"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#indigo)"/>
+  <rect x="8.5" y="8.5" width="239" height="239" rx="55.5" stroke="white" stroke-opacity=".14"/>
+  <path d="M76 83V139a52 52 0 0 0 104 0V70m-20 20 20-20 20 20" stroke="#FAFBFF" stroke-width="21" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="111" cy="122" r="8" fill="#D7F3E9"/>
+  <circle cx="143" cy="122" r="8" fill="#D7F3E9"/>
+</svg>

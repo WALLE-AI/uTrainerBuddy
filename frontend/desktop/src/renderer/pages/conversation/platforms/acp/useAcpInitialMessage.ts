@@ -78,6 +78,7 @@ export const useAcpInitialMessage = ({
           input,
           conversation_id: conversation_id,
           files,
+          loading_id: `initial:${conversation_id}`,
         });
         markSendAccepted?.(result.turn_id, result.runtime, result.msg_id);
 

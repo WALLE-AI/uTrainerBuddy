@@ -1,0 +1,36 @@
+# OpenResearch research core
+
+This directory owns the reproducible dependency and integration boundary for the research kernel. See the root `基于OpenResearch的智能体模型研发实施方案.md` for architecture and acceptance gates.
+
+`upstream.lock.json` pins the exact upstream commit and `git archive` checksum. Production preparation uses an existing local Git object cache when available, or fetches the exact commit from the declared repository. It never copies the mutable reference working tree. Extracted sources, toolchains and compiler caches live under `.tools/research-core/`; distributable files live under `research-core/dist/`.
+
+```powershell
+node research-core/scripts/build-dashboard.mjs
+node research-core/scripts/build.mjs --setup
+node research-core/scripts/build-windows-gateway.mjs
+node research-core/scripts/test-windows.mjs
+node research-core/scripts/test-linux.mjs
+node frontend/desktop/scripts/verify-research-window.mjs
+```
+
+The initial build host is Windows x64 and the execution target is Linux x64 musl. Zig and cargo-zigbuild are installed within the workspace. Upstream Cargo.lock is preserved and builds use `--locked`. The Linux CLI embeds the matching orx-host; the build preserves upstream's MIT license and writes SHA-256 manifests.
+
+The service now embeds the matching native dashboard, including in development builds (`rust-embed/debug-embed`). Build the dashboard before either core binary. Its inventory and hashes are recorded in `dashboard.manifest.json`, copied into each package, and bound by the package manifest. Core builds verify these assets and never replace them with an API placeholder. For an already-built, verified local dashboard, `node research-core/scripts/dashboard.mjs --record` upgrades the inventory without downloading dependencies; this is not a substitute for building changed UI sources.
+
+The desktop gateway verifies the package and the live HTML/entrypoint assets before opening a research window. The Windows service test runs a copied binary from an isolated directory, checks identity/Engine and every served asset. These checks do not replace desktop rendering, SSH workspace, Agent or real GPU acceptance. Keep internal `orx` commands, `ORX_` variables and frozen host contracts intact.
+
+Development artifacts must not be presented as an official OpenResearch release. Source modifications belong in reviewed, versioned patches together with updated build identity and contract tests.
+
+The Electron harness bundles the actual gateway, uses fresh test directories and hidden windows, and checks rendering, renderer isolation, concurrent opens and same-instance reopening. With `--main-app`, it loads the built production main/preload/renderer and backend, clicks the research sidebar, and checks same-instance reopening and denial of IPC from another window. Build the desktop app first. It does not test GPU training.
+
+Versioned `patches/*.json` contain exact replacements against the pinned upstream archive. Preparation applies them only to unmodified or already-patched files; verification checks all 881 original paths against the declared result. Both package manifests record `patches_sha256`. Current patches consistently honor `ORX_SSH_CONFIG` in the dashboard and SSH transport, and allow copying native configuration files when Windows cannot hard-link across volumes. User configuration sources are not overwritten.
+
+```powershell
+node frontend/desktop/scripts/verify-research-window.mjs --main-app
+node research-core/scripts/setup-linux-runtime.mjs
+node research-core/scripts/test-ssh-workspace.mjs
+# Optional: uses the installed native Codex and existing login/model service.
+node research-core/scripts/test-ssh-workspace.mjs --agent
+```
+
+The SSH test uses actual Windows OpenSSH against a disposable non-root SSH account in a private WSL mount namespace. It pre-provisions the verified Linux core, submits a real Git/Local Run, disconnects and reattaches to the same workspace instance, checks logs and rejects a wrong key. Only test-owned processes and directories are cleaned up; failed artifacts are retained. This verifies a remote workspace, not remote installation or user GPU training. The optional Agent test requests exactly one deterministic SSH Run from a native chat/worktree and requires a report with the real Run ID and metric. Model calls may incur charges; failures are not counted as acceptance. See the root `研发迭代计划方案.md` and `reports/desktop/openresearch-core-implementation.md` for results and remaining gates.

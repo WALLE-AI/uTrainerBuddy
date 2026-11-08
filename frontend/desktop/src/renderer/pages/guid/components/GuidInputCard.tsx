@@ -16,6 +16,7 @@ import GuidWorkspaceFootnote from './GuidWorkspaceFootnote';
 
 type GuidInputCardProps = {
   focusRequestKey?: string;
+  focusOnMobile?: boolean;
   // Input state
   input: string;
   onInputChange: (value: string) => void;
@@ -49,6 +50,7 @@ type GuidInputCardProps = {
 
 const GuidInputCard: React.FC<GuidInputCardProps> = ({
   focusRequestKey,
+  focusOnMobile = false,
   input,
   onInputChange,
   onKeyDown,
@@ -77,10 +79,11 @@ const GuidInputCard: React.FC<GuidInputCardProps> = ({
   const textareaAutoSize = isMobile ? { minRows: 2, maxRows: 8 } : { minRows: 2, maxRows: 20 };
 
   useEffect(() => {
-    if (!focusRequestKey || isMobile) return;
+    if (!focusRequestKey || (isMobile && !focusOnMobile)) return;
     inputRef.current?.focus();
-    inputRef.current?.dom.setSelectionRange(input.length, input.length);
-  }, [focusRequestKey, input, isMobile]);
+    const length = inputRef.current?.dom.value.length ?? 0;
+    inputRef.current?.dom.setSelectionRange(length, length);
+  }, [focusRequestKey, focusOnMobile, isMobile]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (isComposing.current) return;

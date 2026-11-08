@@ -229,6 +229,7 @@ const AssistantSettings: React.FC = () => {
             />
           ) : (
             <AssistantHomeTabs
+              expertView={location.pathname === '/experts'}
               assistants={assistants}
               assistantOrder={assistantOrder}
               localeKey={localeKey}

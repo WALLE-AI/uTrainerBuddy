@@ -17,10 +17,9 @@
  * (independent of the split), so the clamp is non-circular.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
-  DEFAULT_WORKSPACE_PANEL_PX,
   MAX_WORKSPACE_PANEL_PX,
   MIN_CHAT_PANEL_PX,
   MIN_PREVIEW_PANEL_PX,
@@ -36,7 +35,7 @@ export function useProjectExplorerColumnWidth(availableWidth: number, isPreviewO
     createDragHandle,
   } = useResizableSplit({
     unit: 'px',
-    defaultWidth: DEFAULT_WORKSPACE_PANEL_PX,
+    defaultWidth: 390,
     minWidth: MIN_WORKSPACE_PANEL_PX,
     maxWidth: MAX_WORKSPACE_PANEL_PX,
     storageKey: 'chat-workspace-width-px',
@@ -56,5 +55,16 @@ export function useProjectExplorerColumnWidth(availableWidth: number, isPreviewO
     if (requestedWidth > maxByContainer) setSplitRatio(maxByContainer);
   }, [active, availableWidth, isPreviewOpen, requestedWidth, maxByContainer, setSplitRatio]);
 
-  return { widthPx, createDragHandle };
+  const [previousWidth, setPreviousWidth] = useState<number | null>(null);
+  const expanded = previousWidth !== null && widthPx >= Math.min(MAX_WORKSPACE_PANEL_PX, maxByContainer);
+  const toggleWidth = () => {
+    if (expanded) {
+      setSplitRatio(Math.min(previousWidth ?? 390, maxByContainer));
+      setPreviousWidth(null);
+    } else {
+      setPreviousWidth(widthPx);
+      setSplitRatio(Math.min(MAX_WORKSPACE_PANEL_PX, maxByContainer));
+    }
+  };
+  return { widthPx, createDragHandle, toggleWidth, expanded };
 }

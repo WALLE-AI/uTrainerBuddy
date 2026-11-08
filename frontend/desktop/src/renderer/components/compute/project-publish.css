@@ -1,0 +1,11 @@
+.project-publish { margin: 0 17px 16px; padding-bottom: 16px; border-bottom: 1px solid var(--color-border-2); font-size: 12px; }
+.project-publish h3, .project-publish h4 { margin: 0 0 8px; font-size: 12px; }
+.project-publish label { display: grid; gap: 5px; margin-top: 10px; color: var(--color-text-2); }
+.project-publish-note { color: var(--color-text-3); font-size: 11px; line-height: 1.8; }
+.project-publish-path { font-size: 11px; overflow-wrap: anywhere; color: var(--color-text-2); line-height: 1.8; }
+.project-publish-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.project-publish-snapshot, .project-transfer { padding: 10px; margin-top: 10px; border: 1px solid var(--color-border-2); border-radius: 6px; }
+.project-publish pre { max-height: 180px; overflow: auto; font-size: 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.project-transfer progress { display: block; width: 100%; height: 5px; margin: 8px 0; accent-color: rgb(var(--primary-6)); }
+.project-transfer small { color: var(--color-text-3); }
+.remote-file-item { display: flex; align-items: center; gap: 6px; }

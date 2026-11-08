@@ -50,12 +50,17 @@ export function hasPermissionMessageForCallId(list: TMessage[], callId: string):
   return list.some(
     (message) =>
       (message.type === 'permission' && message.content?.call_id === callId) ||
+      (message.type === 'acp_permission' && message.content?.tool_call?.tool_call_id === callId) ||
       (message.type === 'ask' && message.content?.request_id === callId)
   );
 }
 
 export function removePermissionMessage(list: TMessage[], target: { id?: string; call_id?: string }): TMessage[] {
   return list.filter((message) => {
+    if (message.type === 'acp_permission') {
+      const callId = message.content.tool_call?.tool_call_id;
+      return callId !== target.id && callId !== target.call_id;
+    }
     if (message.type === 'ask') {
       // A recovered ask is keyed by request_id (== call_id == confirmation id).
       if (target.id && message.content.request_id === target.id) return false;

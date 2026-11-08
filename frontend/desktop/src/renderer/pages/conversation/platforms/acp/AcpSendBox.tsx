@@ -268,6 +268,12 @@ const AcpSendBox: React.FC<{
     []
   );
 
+  useAddEventListener('workbench.reference.append', (text, targetId) => {
+    if (targetId !== conversation_id) return;
+    const previous = contentRef.current;
+    setContentRef.current(previous ? `${previous}\n\n${text}` : text);
+  }, [conversation_id]);
+
   // Check for and send initial message from guid page
   useAcpInitialMessage({
     conversation_id: conversation_id,

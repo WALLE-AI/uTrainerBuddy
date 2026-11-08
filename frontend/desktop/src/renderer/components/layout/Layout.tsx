@@ -36,7 +36,9 @@ import { useDesktopTurnNotification } from '@renderer/hooks/system/notification/
 import { cleanupSiderTooltips } from '@renderer/utils/ui/siderTooltip';
 import { useConversationShortcuts } from '@renderer/hooks/ui/useConversationShortcuts';
 import { isElectronDesktop } from '@renderer/utils/platform';
+import brandIcon from '@renderer/assets/utrainerbuddy-icon.svg';
 import '@renderer/styles/layout.css';
+import '@renderer/styles/trainer-workspace.css';
 
 const SidebarIcon: React.FC<{ size?: number; strokeWidth?: number }> = ({ size = 18, strokeWidth = 4 }) => (
   <svg
@@ -89,7 +91,7 @@ const useDebug = () => {
 
 const UpdateModal = React.lazy(() => import('@/renderer/components/settings/UpdateModal'));
 
-const DEFAULT_SIDER_WIDTH = 260;
+const DEFAULT_SIDER_WIDTH = 240;
 const DESKTOP_COLLAPSED_WIDTH = 0;
 // 桌面侧栏连续可调：下限 200；低于此值拖拽即吸附收起（消灭旧 130 死区）。
 // 上限 = 窗口宽 50%（动态随窗口）。
@@ -180,7 +182,7 @@ const Layout: React.FC<{
   const currentProject = useCurrentProject();
   const { containerRef: mainRowRef, containerWidth: mainRowWidth } = useContainerWidth();
   const explorerActive = Boolean(currentProject) && !isMobile;
-  const { widthPx: explorerWidthPx, createDragHandle: createExplorerDragHandle } = useProjectExplorerColumnWidth(
+  const { widthPx: explorerWidthPx, createDragHandle: createExplorerDragHandle, toggleWidth: toggleExplorerWidth, expanded: explorerExpanded } = useProjectExplorerColumnWidth(
     mainRowWidth,
     isPreviewOpen,
     explorerActive
@@ -397,33 +399,12 @@ const Layout: React.FC<{
                 )}
               >
                 <div
-                  className={classNames('bg-black shrink-0 size-32px relative rd-0.5rem', {
+                  className={classNames('shrink-0 size-32px relative', {
                     '!size-24px': collapsed,
                   })}
                   onClick={onClick}
                 >
-                  <svg
-                    className={classNames('w-5.5 h-5.5 absolute inset-0 m-auto', {
-                      'scale-140': !collapsed,
-                    })}
-                    viewBox='0 0 80 80'
-                    fill='none'
-                  >
-                    <path
-                      key='logo-path-1'
-                      d='M40 20 Q38 22 25 40 Q23 42 26 42 L30 42 Q32 40 40 30 Q48 40 50 42 L54 42 Q57 42 55 40 Q42 22 40 20'
-                      fill='white'
-                    ></path>
-                    <circle key='logo-circle' cx='40' cy='46' r='3' fill='white'></circle>
-                    <path
-                      key='logo-path-2'
-                      d='M18 50 Q40 70 62 50'
-                      stroke='white'
-                      strokeWidth='3.5'
-                      fill='none'
-                      strokeLinecap='round'
-                    ></path>
-                  </svg>
+                  <img src={brandIcon} className='block size-full' alt='' aria-hidden='true' draggable={false} />
                 </div>
                 {isSettingsRoute ? (
                   <Tooltip content={t('common.back', { defaultValue: 'Back to Chat' })} position='bottom'>
@@ -440,11 +421,11 @@ const Layout: React.FC<{
                         }
                       }}
                     >
-                      uBidBuddy
+                      uTrainerBuddy
                     </div>
                   </Tooltip>
                 ) : (
-                  <div className='text-16px text-t-primary collapsed-hidden font-semibold'>uBidBuddy</div>
+                  <div className='text-16px text-t-primary collapsed-hidden font-semibold'>uTrainerBuddy</div>
                 )}
                 {isMobile && !collapsed && (
                   <button
@@ -554,6 +535,8 @@ const Layout: React.FC<{
                 <ProjectPanelHost
                   widthPx={explorerWidthPx}
                   collapsed={explorerCollapsed}
+                  onToggleWidth={toggleExplorerWidth}
+                  expanded={explorerExpanded}
                   dragHandle={createExplorerDragHandle({
                     className: 'absolute start-0 top-0 bottom-0 z-20',
                     reverse: true,

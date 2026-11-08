@@ -1,0 +1,16 @@
+{
+  "id": "0002-workspace-ssh-config",
+  "upstream_commit": "52a3ca22971f4042da4c73f1f3fca8e04aca9089",
+  "reason": "Pass ORX_SSH_CONFIG to direct probes and SSH workspace tunnels on Windows, matching the engine's prepared transport. Unix prepared snapshots remain authoritative.",
+  "files": [
+    {
+      "path": "src/jobs/ssh.rs",
+      "replacements": [
+        {
+          "old": "    ssh_options(target, batch, multiplexing_opts(target), None)\n}",
+          "new": "    let config = std::env::var_os(\"ORX_SSH_CONFIG\").map(std::path::PathBuf::from);\n    ssh_options(target, batch, multiplexing_opts(target), config.as_deref())\n}"
+        }
+      ]
+    }
+  ]
+}

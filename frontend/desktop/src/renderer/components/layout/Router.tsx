@@ -81,6 +81,7 @@ const PanelRoute: React.FC<{ layout: React.ReactElement }> = ({ layout }) => {
           />
           <Route path='/settings/model' element={withRouteFallback(ModeSettings)} />
           <Route path='/assistants' element={withRouteFallback(AssistantSettings)} />
+          <Route path='/experts' element={withRouteFallback(AssistantSettings)} />
           {/* Assistants moved out of Settings to a top-level entry; keep a redirect
               so old deep links / back-nav still land on the new page. */}
           <Route path='/settings/assistants' element={<Navigate to='/assistants' replace />} />

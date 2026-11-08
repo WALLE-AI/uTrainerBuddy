@@ -1,5 +1,5 @@
 import { ipcBridge } from '@/common';
-import { Message, Spin } from '@arco-design/web-react';
+import { Button, Message, Spin } from '@arco-design/web-react';
 import React, { useEffect, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -22,7 +22,7 @@ const ChatConversationIndex: React.FC = () => {
   const notFoundHandledIdRef = useRef<string | undefined>(undefined);
   const defaultConversationTitle = t('conversation.welcome.newConversation');
 
-  const { data, isLoading, mutate } = useSWR(id ? `conversation/${id}` : null, () => {
+  const { data, error, isLoading, mutate } = useSWR(id ? `conversation/${id}` : null, () => {
     return getConversationOrNull(id!);
   });
 
@@ -100,12 +100,22 @@ const ChatConversationIndex: React.FC = () => {
   // browser history): show a toast and replace the route with home, so we
   // don't render an empty skeleton. Fire at most once per id.
   useEffect(() => {
-    if (!id || isLoading || data || notFoundHandledIdRef.current === id) return;
+    if (!id || isLoading || error || data !== null || notFoundHandledIdRef.current === id) return;
     notFoundHandledIdRef.current = id;
     Message.warning(t('conversation.notFound'));
     navigate('/', { replace: true });
-  }, [id, isLoading, data, navigate, t]);
+  }, [id, isLoading, error, data, navigate, t]);
 
+  if (error) return (
+    <div className='flex flex-col items-center justify-center h-full gap-16px p-24px text-center'>
+      <h2>{t('conversation.connectionFailed.title')}</h2>
+      <p className='text-t-secondary'>{t('conversation.connectionFailed.description')}</p>
+      <div className='flex gap-12px'>
+        <Button onClick={() => void mutate()}>{t('conversation.workbench.retry')}</Button>
+        <Button type='primary' onClick={() => navigate('/guid')}>{t('conversation.connectionFailed.backHome')}</Button>
+      </div>
+    </div>
+  );
   if (isLoading) return <Spin loading></Spin>;
   return <ChatConversation conversation={data ?? undefined}></ChatConversation>;
 };
