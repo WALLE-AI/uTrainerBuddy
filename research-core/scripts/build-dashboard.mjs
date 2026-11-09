@@ -15,7 +15,7 @@ const npmCli=resolve(dirname(process.execPath),'node_modules/npm/bin/npm-cli.js'
 await stat(npmCli);
 const env={...rustEnv,npm_config_cache:resolve(cache,'npm-cache'),PNPM_HOME:resolve(cache,'pnpm-home'),LOCALAPPDATA:resolve(cache,'node-local'),APPDATA:resolve(cache,'node-roaming'),XDG_CACHE_HOME:resolve(cache,'node-cache'),XDG_DATA_HOME:resolve(cache,'node-data'),PATH:[resolve(tools,'node_modules/.bin'),process.env.PATH].join(delimiter)};
 await mkdir(tools,{recursive:true});
-await run(process.execPath,[npmCli,'install','--prefix',tools,'--no-save','--ignore-scripts','--no-audit','--no-fund',toolVersion],{env});
+await run(process.execPath,[npmCli,'install','--prefix',tools,'--no-save','--ignore-scripts','--no-audit','--no-fund','--registry=https://registry.npmjs.org',toolVersion],{env});
 const installedPnpm=JSON.parse(await readFile(resolve(tools,'node_modules/pnpm/package.json'),'utf8'));
 if('pnpm@'+installedPnpm.version!==toolVersion)throw Error('Installed pnpm version mismatch');
 const nativePackage=resolve(tools,'node_modules/@pnpm/exe.win32-x64');
