@@ -11,7 +11,9 @@ Electron / React → HTTP + WebSocket → Rust (Axum / Tokio / SQLite)
 
 ## 启动
 
-需要 Node、Bun、Codex CLI 和已有的 Codex 登录/提供商配置。Windows 编译需要 MSVC Build Tools。当前机器已安装项目本地 Rust 工具链。
+需要 Node、Bun、Codex CLI 和已有的 Codex 登录/提供商配置。Windows 编译需要 MSVC Build Tools 和 Windows SDK。当前机器已安装项目本地 Rust 工具链。
+
+缺少 `link.exe` 时，在管理员 PowerShell 中运行 `./backend/scripts/setup-msvc.ps1`。脚本从微软官方下载并验证安装器签名，仅选择 x64/x86 C++ 编译工具与 Windows 11 SDK；安装和共享目录设置为项目 `.tools/msvc/`，下载缓存为 `.tools/vsc/`（路径不超过 50 字符），临时目录为 `.tools/tmp/`，不自动重启。微软安装器与部分系统组件仍可能写入系统盘；这些路径参数参照[微软官方说明](https://learn.microsoft.com/en-us/visualstudio/install/use-command-line-parameters-to-install-visual-studio?view=vs-2022)，共享和缓存位置只能在首次安装时设置。运行记录见 `.tools/tmp/msvc-setup.log`。安装成功后运行 `node backend/scripts/verify-rust.mjs`，实际编译、链接并运行最小程序验证，再进行 Backend 构建。
 
 ```powershell
 # 首次安装 Rust（工具链、下载与临时文件均在项目所在盘）
