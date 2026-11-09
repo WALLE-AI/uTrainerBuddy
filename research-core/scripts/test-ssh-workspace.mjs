@@ -4,12 +4,14 @@ import { promisify } from 'node:util';
 import { createInterface } from 'node:readline';
 import { copyFile, mkdir, mkdtemp, readFile, readdir, writeFile, rm, realpath, symlink, unlink } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
-import { root, cache, rustEnv, linuxPath, lock, patchesSha256 } from './common.mjs';
+import { root, cache, rustEnv, linuxPath } from './common.mjs';
 import { verifyAgentExperiment } from './verify-agent-experiment.mjs';
 import { fixturePython, verifySshPrerequisites } from './ssh-preflight.mjs';
+import { verifyResearchPackages } from './verify-packages.mjs';
 
 const exec = promisify(execFile);
 await verifySshPrerequisites();
+const packageEvidence = await verifyResearchPackages(root);
 const tests = resolve(cache, 'tests');
 await mkdir(tests, { recursive: true });
 const folder = await mkdtemp(resolve(tests, 'ssh-workspace-'));
@@ -159,7 +161,7 @@ try {
     await mkdir(evidenceRoot, { recursive: true });
     const evidencePath = resolve(evidenceRoot, 'agent-' + evidence.runId + '.json');
     await writeFile(evidencePath, JSON.stringify({ ...evidence, verifiedAt: new Date().toISOString(),
-      upstreamCommit: lock.commit, patchesSha256, fixtureMetric: 'metric.fixture=1',
+      ...packageEvidence, fixtureMetric: 'metric.fixture=1',
       engineLogsVerified: true, realTraining: false }, null, 2) + '\n');
     console.log('Agent acceptance evidence: ' + evidencePath);
   }
