@@ -28,12 +28,15 @@ Versioned `patches/*.json` contain exact replacements against the pinned upstrea
 ```powershell
 node frontend/desktop/scripts/verify-research-window.mjs --main-app
 node research-core/scripts/setup-linux-runtime.mjs
+node research-core/scripts/ssh-preflight.mjs
 node research-core/scripts/test-ssh-workspace.mjs
 # Optional: uses the installed native Codex and existing login/model service.
 node research-core/scripts/test-ssh-workspace.mjs --agent
 ```
 
 The SSH test uses actual Windows OpenSSH against a disposable non-root SSH account in a private WSL mount namespace. It pre-provisions the verified Linux core, submits a real Git/Local Run, disconnects and reattaches to the same workspace instance, checks logs and rejects a wrong key. Only test-owned processes and directories are cleaned up; failed artifacts are retained. This verifies a remote workspace, not remote installation or user GPU training. The optional Agent test requests exactly one deterministic SSH Run from a native chat/worktree and requires a report with the real Run ID and metric. Model calls may incur charges; failures are not counted as acceptance. See the root `研发迭代计划方案.md` and `reports/desktop/openresearch-core-implementation.md` for results and remaining gates.
+
+The SSH harness runs `ssh-preflight.mjs` before creating its test workspace. It aggregates missing core files and Windows commands, and checks the private Python/Git/Bash/SSH runtime through a bounded WSL command. The standalone preflight does not install software, create accounts, or invoke models. Success means prerequisites are available, not that package integrity, SSH or Agent acceptance passed. Run its regression checks with `node --test research-core/scripts/ssh-preflight.test.mjs`.
 
 For native Windows Agent acceptance, pass `--codex-binary <absolute-codex.exe-path>` to select the CLI and run a model-free sandbox read probe before submitting the prompt. The probe uses `:workspace` with managed requirements included. An absent setup marker or a full volume for the native home, user profile or temporary directory stops the probe before launching Codex. Initial provisioning must be performed explicitly; an existing marker does not guarantee that Codex will not refresh its state. This setup is separate from the user's existing Codex home. See [official Windows sandbox documentation](https://developers.openai.com/codex/windows).
 

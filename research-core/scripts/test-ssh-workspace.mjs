@@ -6,8 +6,10 @@ import { copyFile, mkdir, mkdtemp, readFile, readdir, writeFile, rm, realpath, s
 import { resolve, dirname } from 'node:path';
 import { root, cache, rustEnv, linuxPath, lock, patchesSha256 } from './common.mjs';
 import { verifyAgentExperiment } from './verify-agent-experiment.mjs';
+import { fixturePython, verifySshPrerequisites } from './ssh-preflight.mjs';
 
 const exec = promisify(execFile);
+await verifySshPrerequisites();
 const tests = resolve(cache, 'tests');
 await mkdir(tests, { recursive: true });
 const folder = await mkdtemp(resolve(tests, 'ssh-workspace-'));
@@ -31,7 +33,7 @@ if (preparedAgentHome) {
 const localBinary = resolve(folder, 'orx.exe');
 await copyFile(resolve(root, 'research-core/dist/windows-x86_64/orx.exe'), localBinary);
 const fixture = spawn('wsl.exe', ['-d', 'docker-desktop', '-e',
-  '/tmp/trainerbuddy-test-python-ee15bf696af4/python/bin/python3.12',
+  fixturePython,
   linuxPath(resolve(root, 'research-core/scripts/ssh-workspace-fixture.py')),
   linuxPath(resolve(root, 'research-core/dist/linux-x86_64'))], { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
 let fixtureError = '';
