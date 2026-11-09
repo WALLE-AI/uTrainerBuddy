@@ -15,6 +15,7 @@ const temp = resolve(repoRoot, '.tools/tmp');
 mkdirSync(temp, { recursive: true });
 rustEnv.TEMP = temp;
 rustEnv.TMP = temp;
+rustEnv.TMPDIR = temp;
 const localCargo = resolve(rustEnv.CARGO_HOME, 'bin', process.platform === 'win32' ? 'cargo.exe' : 'cargo');
 export const cargo = existsSync(localCargo) ? localCargo : 'cargo';
 export function run(command, args, options = {}) {

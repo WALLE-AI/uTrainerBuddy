@@ -26,9 +26,9 @@ bun run electron:dev
 
 可选环境变量：`TRAINERBUDDY_CODEX_BIN` 指向原生 Codex 可执行文件，`TRAINERBUDDY_BACKEND_BIN` 指向 Backend，`TRAINERBUDDY_DATA_DIR` 和 `TRAINERBUDDY_DESKTOP_DATA_DIR` 分别指定后端与桌面数据目录。
 
-## F 盘存储
+## 项目盘存储
 
-本仓库位于 `F:\WALLE-AI\uTrainerBuddy`，项目脚本显式配置：
+当前工作区位于 `D:\projector\WALLE-AI\uTrainerBuddy`。路径由项目根目录计算；本机 Rust 安装、缓存和编译临时文件全部位于 D 盘。项目脚本显式配置：
 
 | 内容 | 目录 |
 | --- | --- |
@@ -39,7 +39,7 @@ bun run electron:dev
 | 开发后端数据库、工作区、诊断日志 | `.data/backend` |
 | Electron 开发数据 | `.data/desktop` |
 
-本机 Windows 用户级 `CARGO_HOME`、`RUSTUP_HOME` 也已设置为上面的 F 盘绝对路径，新终端生效。项目脚本立即生效，不依赖终端继承的旧变量。未修改系统 `HOME` 或用户的 Codex 配置/凭据目录。
+通过项目脚本执行安装和编译时，`CARGO_HOME`、`RUSTUP_HOME`、`CARGO_TARGET_DIR` 及 `TEMP`/`TMP`/`TMPDIR` 均覆盖为上述项目目录，不依赖用户级旧变量。安装器使用 `--no-modify-path`；不修改系统 `HOME` 或用户的 Codex 配置/凭据目录。直接从其它终端执行裸 `cargo` 命令不保证使用这些设置，请使用 `node backend/scripts/toolchain.mjs <cargo 参数>`。
 
 ## 验证
 
