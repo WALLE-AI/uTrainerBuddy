@@ -18,6 +18,7 @@ Electron / React → HTTP + WebSocket → Rust (Axum / Tokio / SQLite)
 ```powershell
 # 首次安装 Rust（工具链、下载与临时文件均在项目所在盘）
 node backend/scripts/setup-rust.mjs
+node backend/scripts/setup-python.mjs
 
 cd frontend/desktop
 bun install
@@ -29,6 +30,8 @@ bun run electron:dev
 可选环境变量：`TRAINERBUDDY_CODEX_BIN` 指向原生 Codex 可执行文件，`TRAINERBUDDY_BACKEND_BIN` 指向 Backend，`TRAINERBUDDY_DATA_DIR` 和 `TRAINERBUDDY_DESKTOP_DATA_DIR` 分别指定后端与桌面数据目录。
 
 ## 项目盘存储
+
+`setup-python.mjs` 将固定的 Python 3.13.17 Windows x64 嵌入式包下载到 `.tools/`，按[官方发布页](https://www.python.org/downloads/release/python-31317/)的 SHA-256 校验后解压至 `.tools/python`。它供研究内核源码验证等标准库脚本使用，不包含 pip，也不替代训练环境。项目子进程优先使用本地 Rust/Python，Windows PATH 统一为一个键，不修改系统 PATH。
 
 当前工作区位于 `D:\projector\WALLE-AI\uTrainerBuddy`。路径由项目根目录计算；本机 Rust 安装、缓存和编译临时文件全部位于 D 盘。项目脚本显式配置：
 
