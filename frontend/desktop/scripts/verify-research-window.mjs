@@ -8,6 +8,8 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const desktop = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+assert(process.argv.includes('--legacy') !== process.argv.includes('--main-app'),
+  'Choose --main-app for the native product entry smoke or --legacy for the retired standalone OpenResearch gateway.');
 const root = resolve(desktop, '../..');
 const tests = resolve(root, '.tools/research-core/tests');
 await mkdir(tests, { recursive: true });
@@ -22,7 +24,7 @@ try {
   if (mainApp) Object.assign(env, { UBIDBUDDY_E2E_TEST: '1',
     TRAINERBUDDY_DESKTOP_DATA_DIR: resolve(folder, 'desktop'), TRAINERBUDDY_DATA_DIR: resolve(folder, 'backend'),
     TRAINERBUDDY_BACKEND_BIN: resolve(root, 'backend/target/debug/trainerbuddy-backend.exe'),
-    TRAINERBUDDY_RESEARCH_CORE_DIR: resolve(root, 'research-core/dist/windows-x86_64') });
+    TRAINERBUDDY_RESEARCH_CORE_DIR: resolve(folder, 'intentionally-missing-core') });
   delete env.ELECTRON_RUN_AS_NODE;
   delete env.ELECTRON_RENDERER_URL;
   await new Promise((resolveExit, reject) => {

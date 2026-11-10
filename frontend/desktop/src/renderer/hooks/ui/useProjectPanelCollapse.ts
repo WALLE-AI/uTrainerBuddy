@@ -27,7 +27,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { WORKSPACE_TOGGLE_EVENT, dispatchWorkspaceStateEvent } from '@/renderer/utils/workspace/workspaceEvents';
+import { PROJECT_WORKBENCH_OPEN_EVENT, WORKSPACE_TOGGLE_EVENT, dispatchWorkspaceStateEvent } from '@/renderer/utils/workspace/workspaceEvents';
 
 const COLLAPSE_KEY_PREFIX = 'project-panel-collapse:';
 
@@ -85,6 +85,7 @@ export function useProjectPanelCollapse({
       if (!active || !projectId) return; // non-project conversation → ChatLayout owns it
       event.preventDefault();
       const next = !collapsedRef.current;
+      collapsedRef.current = next;
       setCollapsed(next);
       if (!isMobile) {
         try {
@@ -94,8 +95,21 @@ export function useProjectPanelCollapse({
         }
       }
     };
+    const handleOpen = (event: Event) => {
+      if (!active || !projectId || (event as CustomEvent<{ projectId: string }>).detail?.projectId !== projectId) return;
+      event.preventDefault();
+      collapsedRef.current = false;
+      setCollapsed(false);
+      if (!isMobile) {
+        try { localStorage.setItem(collapseKey(projectId), 'expanded'); } catch { /* Optional preference. */ }
+      }
+    };
     window.addEventListener(WORKSPACE_TOGGLE_EVENT, handleToggle);
-    return () => window.removeEventListener(WORKSPACE_TOGGLE_EVENT, handleToggle);
+    window.addEventListener(PROJECT_WORKBENCH_OPEN_EVENT, handleOpen);
+    return () => {
+      window.removeEventListener(WORKSPACE_TOGGLE_EVENT, handleToggle);
+      window.removeEventListener(PROJECT_WORKBENCH_OPEN_EVENT, handleOpen);
+    };
   }, [active, projectId, isMobile]);
 
   // Broadcast collapse state so the mac Titlebar workspace button's icon stays in

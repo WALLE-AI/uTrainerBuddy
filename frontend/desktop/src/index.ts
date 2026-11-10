@@ -25,7 +25,6 @@ import { ipcBridge } from './common';
 import { initializeProcess } from './process';
 import { installQuitCleanup } from './process/startup/quitCleanup';
 import { BackendLifecycleManager } from './process/backend/BackendLifecycleManager';
-import { ResearchCoreGateway } from './process/backend/ResearchCoreGateway';
 import { ProcessConfig } from './process/utils/initStorage';
 import { registerWindowMaximizeListeners } from '@process/bridge';
 import './process/bridge/feedbackBridge';
@@ -162,23 +161,6 @@ let appReadyDone = false;
 let mainWindow: BrowserWindow;
 
 let trainerBackend: BackendLifecycleManager | undefined;
-let researchGateway: ResearchCoreGateway | undefined;
-ipcMain.handle('research-core:open-workspace', async (event) => {
-  if (!mainWindow || mainWindow.isDestroyed() || event.sender !== mainWindow.webContents || event.senderFrame !== mainWindow.webContents.mainFrame) return { success: false, code: 'RESEARCH_CALLER_DENIED' };
-  try {
-    const researchRoot = app.isPackaged ? path.join(process.resourcesPath, 'research-core') : path.resolve(process.cwd(), '../../research-core');
-    researchGateway ??= new ResearchCoreGateway({
-      packageDir: process.env.TRAINERBUDDY_RESEARCH_CORE_DIR || path.join(researchRoot, 'dist/windows-x86_64'),
-      dataDir: path.join(path.dirname(process.env.TRAINERBUDDY_DATA_DIR || path.join(app.getPath('userData'), 'backend')), 'research-gateway'),
-      configDir: path.join(path.dirname(process.env.TRAINERBUDDY_DATA_DIR || path.join(app.getPath('userData'), 'backend')), 'research-gateway-config'),
-    });
-    await researchGateway.open();
-    return { success: true };
-  } catch (error) {
-    const code = error instanceof Error && /^RESEARCH_[A-Z_]+$/.test(error.message) ? error.message : 'RESEARCH_START_FAILED';
-    return { success: false, code };
-  }
-});
 ipcMain.on('get-backend-port', (event) => {
   event.returnValue = trainerBackend?.port ?? 0;
 });
@@ -591,7 +573,7 @@ installQuitCleanup({
   disposeCronResumeListener: () => {
     /* no backend cron-resume listener without a spawned aioncore */
   },
-  stopBackend: () => { researchGateway?.detach(); return trainerBackend?.stop() ?? Promise.resolve(); },
+  stopBackend: () => trainerBackend?.stop() ?? Promise.resolve(),
   destroyPetWindow: async () => {
     const { destroyPetWindow } = await import('./process/pet/petManager');
     destroyPetWindow();

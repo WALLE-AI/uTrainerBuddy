@@ -1,4 +1,13 @@
 export const WORKSPACE_TOGGLE_EVENT = 'ubidbuddy-workspace-toggle';
+export const PROJECT_WORKBENCH_OPEN_EVENT = 'trainerbuddy-project-workbench-open';
+
+/** Open the existing project panel without toggling or changing its conversation/tab. */
+export function dispatchProjectWorkbenchOpen(projectId: string): boolean {
+  if (typeof window === 'undefined') return false;
+  const event = new CustomEvent(PROJECT_WORKBENCH_OPEN_EVENT, { cancelable: true, detail: { projectId } });
+  window.dispatchEvent(event);
+  return event.defaultPrevented;
+}
 export const WORKSPACE_STATE_EVENT = 'ubidbuddy-workspace-state';
 export const WORKSPACE_HAS_FILES_EVENT = 'ubidbuddy-workspace-has-files';
 

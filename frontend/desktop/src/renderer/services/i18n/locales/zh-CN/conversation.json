@@ -1,22 +1,8 @@
 {
   "researchWorkspace": {
-    "entry": "研究工作区",
-    "opening": "正在打开研究工作区…",
-    "errors": {
-      "RESEARCH_DESKTOP_REQUIRED": "请在桌面应用中打开研究工作区。",
-      "RESEARCH_PLATFORM_UNSUPPORTED": "当前研究工作区入口尚未支持此桌面平台。",
-      "RESEARCH_PACKAGE_MISSING": "研究内核尚未安装，请先完成研究环境准备。",
-      "RESEARCH_PACKAGE_INCOMPATIBLE": "研究内核版本不匹配，请更新研究环境。",
-      "RESEARCH_PACKAGE_INVALID": "研究内核文件校验失败，请重新安装研究环境。",
-      "RESEARCH_DASHBOARD_MISSING": "研究界面尚未准备完成，请完成研究环境安装后重试。",
-      "RESEARCH_DESCRIPTOR_INVALID": "研究服务的发现信息无效，请检查研究环境。",
-      "RESEARCH_CORE_INCOMPATIBLE": "正在运行的研究服务与桌面版本不兼容。",
-      "RESEARCH_IDENTITY_MISMATCH": "研究服务身份验证失败，请检查当前工作区。",
-      "RESEARCH_START_FAILED": "研究服务启动失败，请检查研究环境后重试。",
-      "RESEARCH_START_EXITED": "研究服务在启动期间退出，请检查研究环境。",
-      "RESEARCH_START_TIMEOUT": "研究服务仍未就绪，请稍后重试。",
-      "RESEARCH_CALLER_DENIED": "当前页面无法打开研究工作区。"
-    }
+    "entry": "?????",
+    "selectConversation": "??????????? Agent ?????????????????",
+    "panelUnavailable": "????????????????"
   },
   "welcome": {
     "title": "Hi，今天有什么安排？",

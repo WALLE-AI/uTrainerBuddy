@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { app, BrowserWindow } from 'electron';
 import { readFile, readdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { ResearchCoreGateway } from '../src/process/backend/ResearchCoreGateway';
+import { ResearchCoreGateway } from './legacy/ResearchCoreGateway';
 
 const root = process.env.TRAINERBUDDY_RESEARCH_TEST_ROOT!;
 const folder = process.env.TRAINERBUDDY_RESEARCH_TEST_DIR!;

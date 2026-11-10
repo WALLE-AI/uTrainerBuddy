@@ -1,22 +1,8 @@
 {
   "researchWorkspace": {
     "entry": "Research workspace",
-    "opening": "Opening research workspace…",
-    "errors": {
-      "RESEARCH_DESKTOP_REQUIRED": "Open the research workspace in the desktop app.",
-      "RESEARCH_PLATFORM_UNSUPPORTED": "This desktop platform does not support the research workspace yet.",
-      "RESEARCH_PACKAGE_MISSING": "Install the research environment before opening this workspace.",
-      "RESEARCH_PACKAGE_INCOMPATIBLE": "Update the research environment to a compatible version.",
-      "RESEARCH_PACKAGE_INVALID": "Research core verification failed. Reinstall the research environment.",
-      "RESEARCH_DASHBOARD_MISSING": "Finish installing the research interface, then try again.",
-      "RESEARCH_DESCRIPTOR_INVALID": "The research service discovery information is invalid.",
-      "RESEARCH_CORE_INCOMPATIBLE": "The running research service is incompatible with this desktop version.",
-      "RESEARCH_IDENTITY_MISMATCH": "Research service identity verification failed.",
-      "RESEARCH_START_FAILED": "The research service could not start. Check the research environment.",
-      "RESEARCH_START_EXITED": "The research service exited during startup.",
-      "RESEARCH_START_TIMEOUT": "The research service is not ready. Try again shortly.",
-      "RESEARCH_CALLER_DENIED": "This page cannot open the research workspace."
-    }
+    "selectConversation": "Select an Agent conversation in a project, or open a project and create a conversation from Home.",
+    "panelUnavailable": "The workbench is not ready yet. Please try again."
   },
   "welcome": {
     "title": "Hi, what's your plan for today?",
