@@ -1,5 +1,11 @@
 # OpenResearch 研究内核实施记录
 
+## 2026-11-10 环境恢复后的 SSH 复验
+
+独立 Alpine WSL2 测试环境位于 D 盘，选择 `TRAINERBUDDY_WSL_DISTRO=trainerbuddy-test` 后执行 `node research-core/scripts/test-ssh-workspace.mjs`，全部通过并正常清理测试进程和临时工作目录。Windows/Linux 包首先通过当前源码、补丁、文件摘要和 UI 一致性校验。
+
+真实 Windows OpenSSH 认证、原生网关连接、远端身份/协议/Engine、Git baseline/Local Run、断连接回相同实例、只保留一个完成 Run、读取 `metric.accuracy=0.75` 日志，以及错误密钥拒绝均通过。本次不含 `--agent` 或模型调用；这是本机隔离 SSH 环境复验，不是用户 GPU、远程安装或 Windows Agent 稳定性验收。历史 I2 稳定性待办保持未完成。
+
 日期：2026-11-08。依据：[新版实施方案](../../基于OpenResearch的智能体模型研发实施方案.md)。
 
 ## 进度
