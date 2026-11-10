@@ -10,7 +10,7 @@ await verifyDashboard();
 await run('python',[resolve(root,'research-core/scripts/verify-source.py'),resolve(cache,'upstream.tar'),source]);
 if (process.argv.includes('--setup')) await setup();
 const target = 'x86_64-unknown-linux-musl';
-const env = {...rustEnv, PATH: [resolve(cargoTools,'bin'),zigDirectory,resolve(rustEnv.CARGO_HOME,'bin'),process.env.PATH].join(delimiter), CARGO_TARGET_DIR: resolve(cache,'target'), CARGO_ZIGBUILD_CACHE_DIR:resolve(cache,'zigbuild-cache'), ZIG_GLOBAL_CACHE_DIR:resolve(cache,'zig-global-cache'), ZIG_LOCAL_CACHE_DIR:resolve(cache,'zig-local-cache'), CARGO_PROFILE_DEV_DEBUG:'0', CARGO_PROFILE_RELEASE_DEBUG:'0', CARGO_BUILD_JOBS: '4'};
+const env = {...rustEnv, PATH: [resolve(cargoTools,'bin'),zigDirectory,rustEnv.PATH].join(delimiter), CARGO_TARGET_DIR: resolve(cache,'target'), CARGO_ZIGBUILD_CACHE_DIR:resolve(cache,'zigbuild-cache'), ZIG_GLOBAL_CACHE_DIR:resolve(cache,'zig-global-cache'), ZIG_LOCAL_CACHE_DIR:resolve(cache,'zig-local-cache'), CARGO_PROFILE_DEV_DEBUG:'0', CARGO_PROFILE_RELEASE_DEBUG:'0', CARGO_BUILD_JOBS: '4'};
 const rustup = resolve(rustEnv.CARGO_HOME, 'bin', process.platform === 'win32' ? 'rustup.exe' : 'rustup');
 if (process.argv.includes('--setup')) await run(rustup, ['target','add',target], {env});
 // Embed the verified dashboard even in development builds; never overwrite its assets.
