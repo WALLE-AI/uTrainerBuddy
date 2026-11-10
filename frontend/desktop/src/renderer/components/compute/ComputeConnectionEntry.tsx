@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { computeRequest, emptyProfile, type ComputeTarget, type ConnectionProfile } from './api';
 import './compute-connection.css';
 import { RemoteFiles } from './RemoteFiles';
+import { OPEN_COMPUTE_CONNECTION } from './connectionEvents';
 
 const legacyKey = 'trainer.compute.connection.v1';
 function legacyProfile(): ConnectionProfile {
@@ -62,6 +63,15 @@ export default function ComputeConnectionEntry({ collapsed = false }: { collapse
   }, []);
   const open = () => { setView('connection'); setPassword(''); setDraft(target?.profile ? { ...emptyProfile, ...target.profile } : legacyProfile()); setVisible(true); void load(true); };
   const close = () => { setPassword(''); setVisible(false); };
+  useEffect(() => {
+    const handleOpen = (event: Event) => {
+      event.preventDefault();
+      // Repeated requests must not reset an unsaved connection form.
+      if (!dialogOpen.current) { dialogOpen.current = true; open(); }
+    };
+    window.addEventListener(OPEN_COMPUTE_CONNECTION, handleOpen);
+    return () => window.removeEventListener(OPEN_COMPUTE_CONNECTION, handleOpen);
+  }, [open]);
 
   const act = async (action: 'save' | 'connect' | 'disconnect') => {
     if (operation.current) return;

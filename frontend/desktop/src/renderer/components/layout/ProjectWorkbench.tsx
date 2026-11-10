@@ -7,6 +7,7 @@
 import { ipcBridge } from '@/common';
 import { useCurrentConversation } from '@/renderer/pages/conversation/explorer/currentConversationStore';
 import { ProjectFiles } from './ProjectFiles';
+import { ResearchComputeCard } from '../compute/ResearchComputeCard';
 import { emitter } from '@/renderer/utils/emitter';
 import { Message } from '@arco-design/web-react';
 import { Close, FullScreen, Pushpin, Refresh } from '@icon-park/react';
@@ -145,6 +146,7 @@ export function ProjectWorkbench({
       className='workbench-body'
       tabIndex={0}
     >
+      {conversationId && <ResearchComputeCard projectId={projectId} active={enabled} onOpenFiles={() => selectTab('files')} />}
       <div className='workbench-section-heading'>
         <h3>{label('latestPlan')}</h3>
         <button

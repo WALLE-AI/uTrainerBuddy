@@ -5,6 +5,7 @@
 .workbench-project-files > .workbench-section-heading, .workbench-project-files > .workbench-note { margin-inline: 17px; }
 .workbench-project-files .workspace-tree { margin-inline: 12px; }
 .workbench-actions { display: flex; align-items: center; flex-shrink: 0; gap: 2px; }
+.workbench-compute-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .workbench-actions button { display: grid; place-items: center; }
 .workbench-actions button[aria-pressed='true'] { background: var(--bg-3); color: var(--aou-6); }
 .trainer-project-workbench button:disabled { opacity: .45; cursor: default; }
