@@ -8,14 +8,10 @@ import { root, cache, rustEnv, linuxPath, wsl } from './common.mjs';
 import { verifyAgentExperiment } from './verify-agent-experiment.mjs';
 import { fixturePython, verifySshPrerequisites } from './ssh-preflight.mjs';
 import { verifyResearchPackages } from './verify-packages.mjs';
+import { verifyAgentPrerequisites } from './agent-preflight.mjs';
 
 const exec = promisify(execFile);
-await verifySshPrerequisites();
-const packageEvidence = await verifyResearchPackages(root);
 const tests = resolve(cache, 'tests');
-await mkdir(tests, { recursive: true });
-const folder = await mkdtemp(resolve(tests, 'ssh-workspace-'));
-assert.equal(dirname(folder), tests);
 const argument = name => {
   const index = process.argv.indexOf(name);
   if (index < 0) return undefined;
@@ -24,6 +20,14 @@ const argument = name => {
 };
 const codexBinary = argument('--codex-binary');
 const preparedAgentHome = argument('--agent-home');
+if (process.argv.includes('--agent')) {
+  await verifyAgentPrerequisites({ binary: codexBinary, nativeHome: preparedAgentHome, tests });
+}
+await verifySshPrerequisites();
+const packageEvidence = await verifyResearchPackages(root);
+await mkdir(tests, { recursive: true });
+const folder = await mkdtemp(resolve(tests, 'ssh-workspace-'));
+assert.equal(dirname(folder), tests);
 const nativeHome = resolve(folder, 'local-data/agents/codex');
 if (preparedAgentHome) {
   const canonical = await realpath(preparedAgentHome);
