@@ -4,9 +4,10 @@ On a fresh Windows host, run `./research-core/scripts/setup-wsl.ps1` from an adm
 
 This directory owns the reproducible dependency and integration boundary for the research kernel. See the root `基于OpenResearch的智能体模型研发实施方案.md` for architecture and acceptance gates.
 
-Linux test setup and execution share `backend/scripts/wsl.mjs`. After importing a dedicated **Alpine** WSL2 test distribution on the project drive, select it in the same PowerShell session before running any setup/test commands:
+Linux test setup and execution share `backend/scripts/wsl.mjs`. Prepare the dedicated **Alpine** WSL2 distribution, then select it in the same PowerShell session before running setup/test commands:
 
 ```powershell
+node research-core/scripts/setup-test-distro.mjs
 $env:TRAINERBUDDY_WSL_DISTRO = 'trainerbuddy-test'
 node backend/scripts/setup-linux-python.mjs
 node research-core/scripts/setup-linux-runtime.mjs
@@ -14,7 +15,7 @@ node research-core/scripts/test-linux.mjs
 node research-core/scripts/test-ssh-workspace.mjs
 ```
 
-The configuration does not create/import a distribution. The existing fixture needs Alpine's `apk`, musl and BusyBox; selecting Ubuntu is not sufficient. With no override, `docker-desktop` and `/mnt/host/<drive>` remain the defaults. Other distributions default to `/mnt/<drive>`; set `TRAINERBUDDY_WSL_MOUNT_ROOT` if their Windows-drive mount root differs. Setup, preflight, fixture launch and key copies all use the selected distribution explicitly as root for private namespace/chroot setup. Actual experiments still use the fixture's unprivileged account. Regression command: `node --test backend/scripts/wsl.test.mjs research-core/scripts/ssh-preflight.test.mjs`.
+The distro setup verifies the official Alpine 3.22.8 x64 rootfs SHA-256 and imports `trainerbuddy-test` into `.tools/wsl/trainerbuddy-test` on the project drive. It installs namespace tools, checks the project mount and reuses an existing distro only when its local receipt and internal fixture marker match. It never unregisters an existing distro. The fixture needs Alpine's `apk`, musl and BusyBox; selecting Ubuntu is not sufficient. Package dependencies use the configured Alpine repositories. With no override, `docker-desktop` and `/mnt/host/<drive>` remain the defaults. Other distributions default to `/mnt/<drive>`; set `TRAINERBUDDY_WSL_MOUNT_ROOT` if their Windows-drive mount root differs. Setup, preflight, fixture launch and key copies all use the selected distribution explicitly as root for private namespace/chroot setup. Actual experiments still use the fixture's unprivileged account. Regression command: `node --test backend/scripts/wsl.test.mjs research-core/scripts/ssh-preflight.test.mjs`.
 
 `upstream.lock.json` pins the exact upstream commit and `git archive` checksum. Production preparation uses an existing local Git object cache when available, or fetches the exact commit from the declared repository. It never copies the mutable reference working tree. Extracted sources, toolchains and compiler caches live under `.tools/research-core/`; distributable files live under `research-core/dist/`.
 
