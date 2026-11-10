@@ -2,6 +2,27 @@
 
 > **2026-11-10 纠偏声明：本文原有“直接集成 OpenResearch 内核与原生 Dashboard”的实施基线已撤销。** 用户要求借鉴 UI 交互模式和 backend 研究工作流，在 uTrainerBuddy 的 Electron/React 与 Rust Backend 中实现自有研究能力，不是包装原生产品或更换品牌。当前执行依据为《研发迭代计划方案.md》顶部“当前执行基线”；本文下方内容暂作为历史技术参考，其架构优先级声明不再有效。R0 将重写自有架构、对象/API、执行器复用和数据迁移边界；旧集成测试不能作为新产品验收。
 
+## 2026-11-10 当前架构与旧集成处置
+
+产品链路：现有首页/Agent 会话 → Layout 托管的 ProjectWorkbench 五标签 → uTrainerBuddy Rust Backend → 本地/SSH 执行适配器。OpenResearch 是参考源码与历史验证环境，不是产品 UI 或状态权威。
+
+| 边界 | 当前代码与处置 |
+| --- | --- |
+| 旧桌面入口 | `ResearchWorkspaceEntry` → preload `openResearchWorkspace` → main `research-core:open-workspace` → `ResearchCoreGateway.open()`；首先移除该链，入口改为展开已有工作台 |
+| 工作台 | Layout、ProjectPanelHost、ProjectWorkbench、ProjectFiles、Preview 继续复用；打开必须幂等，重复点击不能收起 |
+| 自有状态 | `backend/src/store.rs`、`api.rs`、`chat.rs` 保留，研究对象纳入自有 Backend，不向旧研究数据库双写 |
+| Agent | `backend/src/harness/codex.rs` 保留；研究工具关联现有项目/会话与 Run，不强制采用上游 Harness |
+| 算力 | `compute.rs`、`remote_session.rs`、`project_sync.rs` 及 ComputeConnectionEntry/RemoteFiles 优先复用，执行身份、handle 和恢复缺口后续补齐 |
+| 旧构建与验收 | research-core 与原生窗口测试仅保留为历史参考，不算新产品入口验收；新入口必须在没有上游产物时可用 |
+
+对象/API 边界（待实现）：Project/Conversation 复用现有 ID；ResearchSession 保存目标、预算与暂停；Experiment 保存父实验、配方与快照；Run 保存幂等提交身份、不可变执行目标、handle 和生命周期；Artifact 与事件引用 Run ID。五标签按项目/会话来源查询，状态与事件由 Backend 统一持久化。会话 plan 作为讨论步骤，不替代持久研究目标或运行状态。
+
+数据处置：旧入口默认在应用数据父目录创建 `research-gateway`、`research-gateway-config`，开发通常为 `.data/` 下，环境变量覆盖时路径不同。自有 Backend 数据在 `TRAINERBUDDY_DATA_DIR`（开发默认 `.data/backend`）。首次纠偏仅断开入口，不删除、迁移或重写这些目录，不终止未经身份核对的研究服务。未来导入先列出旧 Project/Chat/Experiment/Run/产物到新 ID 的映射，采用只读快照与可回退导入；未验收前不宣称历史研究已进入新工作台。
+
+先交付入口解耦与实际 UI 回归，再细化研究 API、算力联动和执行器。入口退役不代表运行/产物/动态内容已实现。
+
+## 历史方案（以下架构、部署与阶段安排已撤销，仅供追溯）
+
 日期：2026-11-08  
 状态：实施基线；本文的新增能力均需按阶段验收，不能视为已经实现。  
 目标：用户给出模型能力目标后，由 Agent 主导诊断、提出假设、修改代码、运行训练与评测、读取证据并继续迭代。
