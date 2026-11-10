@@ -4,7 +4,7 @@ import { promisify } from 'node:util';
 import { createInterface } from 'node:readline';
 import { copyFile, mkdir, mkdtemp, readFile, readdir, writeFile, rm, realpath, symlink, unlink } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
-import { root, cache, rustEnv, linuxPath } from './common.mjs';
+import { root, cache, rustEnv, linuxPath, wsl } from './common.mjs';
 import { verifyAgentExperiment } from './verify-agent-experiment.mjs';
 import { fixturePython, verifySshPrerequisites } from './ssh-preflight.mjs';
 import { verifyResearchPackages } from './verify-packages.mjs';
@@ -34,10 +34,10 @@ if (preparedAgentHome) {
 }
 const localBinary = resolve(folder, 'orx.exe');
 await copyFile(resolve(root, 'research-core/dist/windows-x86_64/orx.exe'), localBinary);
-const fixture = spawn('wsl.exe', ['-d', 'docker-desktop', '-e',
+const fixture = spawn('wsl.exe', wsl.args(
   fixturePython,
   linuxPath(resolve(root, 'research-core/scripts/ssh-workspace-fixture.py')),
-  linuxPath(resolve(root, 'research-core/dist/linux-x86_64'))], { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
+  linuxPath(resolve(root, 'research-core/dist/linux-x86_64'))), { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
 let fixtureError = '';
 fixture.stderr.on('data', bytes => { fixtureError = (fixtureError + bytes).slice(-3000); });
 let core;
@@ -73,7 +73,7 @@ try {
   });
   for (const key of ['client', 'wrong']) {
     const target = resolve(folder, key);
-    await exec('wsl.exe', ['-d', 'docker-desktop', '-e', 'cp', remote.folder + '/' + key, linuxPath(target)], { windowsHide: true });
+    await exec('wsl.exe', wsl.args('cp', remote.folder + '/' + key, linuxPath(target)), { windowsHide: true });
     await exec('icacls.exe', [target, '/inheritance:r', '/grant:r', `${process.env.USERDOMAIN}\\${process.env.USERNAME}:(F)`], { windowsHide: true });
   }
   const key = remote.publicHostKey.split(' ').slice(0, 2).join(' ');

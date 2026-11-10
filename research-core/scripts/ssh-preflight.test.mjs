@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { resolve, dirname } from 'node:path';
 import { test } from 'node:test';
 import { verifySshPrerequisites } from './ssh-preflight.mjs';
+import { createWslConfig } from '../../backend/scripts/wsl.mjs';
 
 test('missing local prerequisites are aggregated without creating a workspace', async () => {
   const projectRoot = await mkdtemp(resolve(tmpdir(), 'ssh-preflight-'));
@@ -39,12 +40,13 @@ test('WSL failures retain diagnostics and successful preflight is not acceptance
       assert(options.windowsHide);
       assert(options.timeout <= 30000);
       if (command === 'wsl.exe') {
-        assert.deepEqual(args.slice(0, 5), ['-d', 'docker-desktop', '-e', '/bin/sh', '-c']);
+        assert.deepEqual(args.slice(0, 7), ['-d', 'trainerbuddy-test', '-u', 'root', '-e', '/bin/sh', '-c']);
         assert.equal(options.encoding, 'buffer');
         throw Object.assign(new Error('exit 1'), { stdout: Buffer.from('Missing executable: fixture Python', 'utf16le') });
       }
     };
-    await assert.rejects(verifySshPrerequisites({ projectRoot, platform: 'win32', run }), /Missing executable: fixture Python/);
+    await assert.rejects(verifySshPrerequisites({ projectRoot, platform: 'win32', run,
+      wslConfig: createWslConfig({ TRAINERBUDDY_WSL_DISTRO: 'trainerbuddy-test' }) }), /trainerbuddy-test.*Missing executable: fixture Python/);
     assert.deepEqual(await verifySshPrerequisites({ projectRoot, platform: 'win32', run: async () => {} }),
       { prerequisitesAvailable: true, acceptancePassed: false });
   } finally {

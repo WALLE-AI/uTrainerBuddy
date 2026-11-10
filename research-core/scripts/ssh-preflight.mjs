@@ -3,6 +3,7 @@ import { stat } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
+import { wsl } from '../../backend/scripts/wsl.mjs';
 
 const exec = promisify(execFile);
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -18,9 +19,9 @@ function diagnostic(value) {
 
 // Check prerequisites before creating test directories, keys or service processes.
 // This does not validate package integrity or count as SSH/Agent acceptance.
-export async function verifySshPrerequisites({ projectRoot = root, platform = process.platform, run = exec } = {}) {
+export async function verifySshPrerequisites({ projectRoot = root, platform = process.platform, run = exec, wslConfig = wsl } = {}) {
   const failures = [];
-  if (platform !== 'win32') throw new Error('SSH workspace acceptance requires Windows x64 and the private docker-desktop WSL runtime');
+  if (platform !== 'win32') throw new Error('SSH workspace acceptance requires Windows and a prepared Alpine WSL test runtime');
   const requiredFiles = [
     ['research-core/dist/windows-x86_64/orx.exe', 'Build the Windows gateway with build-windows-gateway.mjs'],
     ['research-core/dist/linux-x86_64/orx', 'Build the Linux core with build.mjs --setup'],
@@ -51,10 +52,10 @@ export async function verifySshPrerequisites({ projectRoot = root, platform = pr
       `${runtime}/usr/sbin/sshd`, `${runtime}/usr/bin/ssh-keygen`];
     const script = 'missing=0; for path in "$@"; do if [ ! -x "$path" ]; then printf "Missing executable: %s\\n" "$path"; missing=1; fi; done; exit "$missing"';
     try {
-      await run('wsl.exe', ['-d', 'docker-desktop', '-e', '/bin/sh', '-c', script, 'preflight', ...paths],
+      await run('wsl.exe', wslConfig.args('/bin/sh', '-c', script, 'preflight', ...paths),
         { windowsHide: true, timeout: 30000, maxBuffer: 65536, encoding: 'buffer' });
     } catch (error) {
-      failures.push('Private WSL runtime unavailable: ' + (diagnostic(error.stdout) || diagnostic(error.stderr) || error.message)
+      failures.push('Private WSL runtime unavailable (' + wslConfig.distro + '): ' + (diagnostic(error.stdout) || diagnostic(error.stderr) || error.message)
         + '. Prepare the fixture Python and run setup-linux-runtime.mjs; do not install into the Docker system root');
     }
   }

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { rustEnv, cargo } from '../../backend/scripts/toolchain.mjs';
 
 export { rustEnv, cargo };
+export { wsl, linuxPath } from '../../backend/scripts/wsl.mjs';
 export const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 export const cache = resolve(root, '.tools/research-core');
 export const lock = JSON.parse(await readFile(resolve(root, 'research-core/upstream.lock.json'), 'utf8'));
@@ -17,7 +18,6 @@ const patchFiles = (await readdir(patchRoot)).filter(name => name.endsWith('.jso
 export const patchesSha256 = hash(Buffer.concat(await Promise.all(patchFiles.map(async name =>
   Buffer.concat([Buffer.from(name + '\0'), await readFile(resolve(patchRoot, name))])))));
 export const quote = value => "'" + value.replaceAll("'", "'\\''") + "'";
-export const linuxPath = value => value.replaceAll('\\', '/').replace(/^([A-Za-z]):/, (_, drive) => `/mnt/host/${drive.toLowerCase()}`);
 export async function run(command, args, options = {}) {
   return new Promise((resolveRun, reject) => {
     const child = spawn(command, args, {cwd: root, env: rustEnv, stdio: 'inherit', windowsHide: true, ...options});
