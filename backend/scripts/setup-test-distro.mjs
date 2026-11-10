@@ -4,8 +4,8 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { promisify } from 'node:util';
-import { root, rustEnv } from './common.mjs';
-import { createWslConfig } from '../../backend/scripts/wsl.mjs';
+import { repoRoot as root, rustEnv } from './toolchain.mjs';
+import { createWslConfig } from './wsl.mjs';
 
 assert(process.platform === 'win32' && process.arch === 'x64', 'Requires Windows x64');
 const exec = promisify(execFile);

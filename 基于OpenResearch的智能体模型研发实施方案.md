@@ -13,7 +13,7 @@
 | 自有状态 | `backend/src/store.rs`、`api.rs`、`chat.rs` 保留，研究对象纳入自有 Backend，不向旧研究数据库双写 |
 | Agent | `backend/src/harness/codex.rs` 保留；研究工具关联现有项目/会话与 Run，不强制采用上游 Harness |
 | 算力 | `compute.rs`、`remote_session.rs`、`project_sync.rs` 及 ComputeConnectionEntry/RemoteFiles 优先复用，执行身份、handle 和恢复缺口后续补齐 |
-| 旧构建与验收 | research-core 与原生窗口测试仅保留为历史参考，不算新产品入口验收；新入口必须在没有上游产物时可用 |
+| 旧构建与验收 | research-core 专用构建、补丁、测试和 legacy 网关已删除；历史实现只在 Git 中追溯。自有入口使用 verify-research-entry.mjs / verify-research-app.mjs 验收 |
 
 对象/API 边界（待实现）：Project/Conversation 复用现有 ID；ResearchSession 保存目标、预算与暂停；Experiment 保存父实验、配方与快照；Run 保存幂等提交身份、不可变执行目标、handle 和生命周期；Artifact 与事件引用 Run ID。五标签按项目/会话来源查询，状态与事件由 Backend 统一持久化。会话 plan 作为讨论步骤，不替代持久研究目标或运行状态。
 

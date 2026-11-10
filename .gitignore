@@ -26,5 +26,4 @@ out/
 
 /backend/.build/
 /backend/host-binaries/
-/research-core/dist/
 /.tools/
