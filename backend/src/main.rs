@@ -4,6 +4,7 @@ mod compute;
 mod harness;
 mod project_sync;
 mod remote_session;
+mod research;
 mod ssh_askpass;
 mod store;
 

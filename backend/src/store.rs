@@ -13,7 +13,7 @@ impl Store {
     pub fn open(path: &Path) -> Result<Self> {
         let mut conn = Connection::open(path)?;
         let version: u32 = conn.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        if version > 2 {
+        if version > 3 {
             return Err(anyhow!("Database was created by a newer backend"));
         }
         if version == 1 {
@@ -22,7 +22,14 @@ impl Store {
                 conn.execute("VACUUM INTO ?", [backup.to_string_lossy().as_ref()])?;
             }
         }
+        if version == 2 {
+            let backup = path.with_extension("pre-research-v2.sqlite");
+            if !backup.exists() {
+                conn.execute("VACUUM INTO ?", [backup.to_string_lossy().as_ref()])?;
+            }
+        }
         conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
+            BEGIN IMMEDIATE;
             CREATE TABLE IF NOT EXISTS conversations(id TEXT PRIMARY KEY, body TEXT NOT NULL, thread_id TEXT);
             CREATE TABLE IF NOT EXISTS messages(seq INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT UNIQUE NOT NULL, conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE, body TEXT NOT NULL);
             CREATE INDEX IF NOT EXISTS messages_conversation ON messages(conversation_id,seq);
@@ -33,7 +40,11 @@ impl Store {
             CREATE TABLE IF NOT EXISTS project_compute_bindings(project_id TEXT PRIMARY KEY REFERENCES projects(id), body TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS source_snapshots(id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id), body TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS transfers(id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id), request_key TEXT NOT NULL, body TEXT NOT NULL, UNIQUE(project_id,request_key));
-            PRAGMA user_version=2;")?;
+            CREATE TABLE IF NOT EXISTS research_sessions(id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id), origin_conversation_id TEXT NOT NULL, body TEXT NOT NULL);
+            CREATE INDEX IF NOT EXISTS research_scope ON research_sessions(project_id,origin_conversation_id);
+            CREATE TABLE IF NOT EXISTS research_requests(project_id TEXT NOT NULL REFERENCES projects(id), request_id TEXT NOT NULL, request TEXT NOT NULL, result TEXT NOT NULL, PRIMARY KEY(project_id,request_id));
+            PRAGMA user_version=3;
+            COMMIT;")?;
         let mut grouped = std::collections::BTreeMap::<
             String,
             (String, std::collections::BTreeSet<String>),

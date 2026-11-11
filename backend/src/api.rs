@@ -234,7 +234,8 @@ pub async fn api(
                 | "NOT_A_DIRECTORY"
                 | "REMOTE_FILE_IO_FAILED" => (StatusCode::BAD_REQUEST, message.as_str()),
                 "IDEMPOTENCY_CONFLICT" => (StatusCode::CONFLICT, "IDEMPOTENCY_CONFLICT"),
-                "BINDING_CONFLICT"
+                "RESEARCH_REVISION_CONFLICT"
+                | "BINDING_CONFLICT"
                 | "COMPUTE_TARGET_CHANGED"
                 | "TRANSFER_TERMINAL"
                 | "SNAPSHOT_STALE" => (StatusCode::CONFLICT, message.as_str()),
@@ -277,6 +278,9 @@ async fn dispatch(
     method: &Method,
     body: Value,
 ) -> Result<Value> {
+    if let Some(result) = crate::research::dispatch(&s.chat.store, method, path, q, &body).await {
+        return result;
+    }
     if let Some(result) = crate::project_sync::dispatch(s, method, path, q, &body).await {
         return result;
     }
