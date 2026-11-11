@@ -18,16 +18,16 @@ function subscribe(callback: () => void) {
 export function ResearchModeSelector() {
   const { t } = useTranslation();
   const value = useSyncExternalStore(subscribe, getResearchMode);
-  return <div className='flex gap-8px mb-8px' role='group' aria-label={t('conversation.researchModes.label')}>
-    {(['quick', 'deep'] as const).map(mode => <button
-      key={mode}
-      type='button'
-      className='workbench-button'
-      aria-pressed={value === mode}
-      onClick={() => {
-        localStorage.setItem(key, mode);
+  return <select
+      data-testid='research-mode-select'
+      aria-label={t('conversation.researchModes.label')}
+      value={value}
+      style={{ height: 28, maxWidth: 124, flexShrink: 0, padding: '0 6px', border: 'none', borderRadius: 6, background: 'var(--color-fill-2)', color: 'var(--color-text-1)', fontSize: 12, cursor: 'pointer' }}
+      onChange={event => {
+        localStorage.setItem(key, event.target.value);
         window.dispatchEvent(new Event(eventName));
       }}
-    >{value === mode ? '● ' : ''}{t(`conversation.researchModes.${mode}`)}</button>)}
-  </div>;
+    >
+      {(['quick', 'deep'] as const).map(mode => <option key={mode} value={mode}>{t(`conversation.researchModes.${mode}`)}</option>)}
+    </select>;
 }

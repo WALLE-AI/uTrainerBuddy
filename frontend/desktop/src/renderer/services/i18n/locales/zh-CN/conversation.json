@@ -536,10 +536,10 @@
     },
     "addToQueue": "存到草稿箱",
     "addToQueueShortcut": "⌘ + Enter / Ctrl + Enter",
-    "midturnBlocked": "当前 Agent 正在处理，暂时不能直接发送。可以先存到草稿箱，稍后发送。",
+    "midturnBlocked": "当前 Agent 正在处理，请等待完成后再发送。",
     "enterShortcut": "Enter",
     "actionMode": "Choose send action",
-    "midturnBlockedSendHint": "当前 Agent 正在处理，暂时不能直接发送。可以先存到草稿箱，稍后发送。",
+    "midturnBlockedSendHint": "当前 Agent 正在处理，请等待完成后再发送。",
     "addToQueueBusyHint": "先存到草稿箱，稍后发送。"
   },
   "contextUsage": {

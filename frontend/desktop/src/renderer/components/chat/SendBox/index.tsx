@@ -247,6 +247,7 @@ const SendBox: React.FC<{
   loading?: boolean;
   className?: string;
   tools?: React.ReactNode;
+  toolAction?: React.ReactNode;
   rightTools?: React.ReactNode;
   prefix?: React.ReactNode;
   placeholder?: string;
@@ -304,6 +305,7 @@ const SendBox: React.FC<{
   className,
   loading,
   tools,
+  toolAction,
   rightTools,
   disabled,
   sendDisabled = false,
@@ -2124,7 +2126,7 @@ const SendBox: React.FC<{
             >
               <span className='sendbox-left-tool-group'>
                 {renderedTools}
-                {draftActionButton}
+                {toolAction ?? draftActionButton}
               </span>
             </div>
           )}
@@ -2229,7 +2231,7 @@ const SendBox: React.FC<{
             >
               <span className='sendbox-left-tool-group'>
                 {renderedTools}
-                {draftActionButton}
+                {toolAction ?? draftActionButton}
               </span>
             </div>
             <div className='sendbox-actions flex items-center gap-1'>

@@ -1,3 +1,4 @@
+import { ResearchModeSelector } from '@/renderer/components/research/ResearchMode';
 /**
  * @license
  * Copyright 2025 uBidBuddy
@@ -620,6 +621,7 @@ const GuidActionRow: React.FC<GuidActionRowProps> = ({
             />
           )}
         </div>
+        <ResearchModeSelector />
       </div>
       {isMobile && (
         <MobileActionSheet

@@ -1,4 +1,3 @@
-import { ResearchModeSelector } from '@/renderer/components/research/ResearchMode';
 /**
  * @license
  * Copyright 2025 uBidBuddy
@@ -684,7 +683,6 @@ const GuidPage: React.FC = () => {
             onSelectAssistant={handleSelectAssistant}
           />
 
-          <ResearchModeSelector />
           <GuidInputCard
             focusOnMobile={Boolean(starterFocusKey)}
             focusRequestKey={starterFocusKey || (navState?.focusPrefill && navState.prefillPrompt ? location.key : undefined)}

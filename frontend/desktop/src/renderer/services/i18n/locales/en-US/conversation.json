@@ -536,10 +536,10 @@
     },
     "addToQueue": "Save to Draft box",
     "addToQueueShortcut": "⌘ + Enter / Ctrl + Enter",
-    "midturnBlocked": "This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.",
+    "midturnBlocked": "This agent is still working. Please wait for completion before sending.",
     "enterShortcut": "Enter",
     "actionMode": "Choose send action",
-    "midturnBlockedSendHint": "This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.",
+    "midturnBlockedSendHint": "This agent is still working. Please wait for completion before sending.",
     "addToQueueBusyHint": "Save to Draft box and send it later."
   },
   "contextUsage": {

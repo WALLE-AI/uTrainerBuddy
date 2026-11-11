@@ -59,9 +59,9 @@ app.whenReady().then(async()=>{
  };
  const collection='projects/'+${JSON.stringify(sources[0].project_id)}+'/research-documents?conversation_id='+${JSON.stringify(sources[0].id)};
  await wait('!!document.querySelector("[data-testid=plan-documents]")');
- await click('[aria-label="Research mode"] button:nth-child(2)');
+ await run('(()=>{const el=document.querySelector("[data-testid=research-mode-select]");el.value="deep";el.dispatchEvent(new Event("change",{bubbles:true}));})()');
  await run('window.captureQueue()');
- await click('[aria-label="Research mode"] button:nth-child(1)');
+ await run('(()=>{const el=document.querySelector("[data-testid=research-mode-select]");el.value="quick";el.dispatchEvent(new Event("change",{bubbles:true}));})()');
  assert.equal(await run('window.queued.research_mode'),'deep');
  await api('POST','conversations/${sources[0].id}/messages',{content:'document',research_mode:'deep',loading_id:'document-ui'});
  await wait('!!document.querySelector("[data-testid=open-plan]")');

@@ -446,15 +446,13 @@ Please check your local CLI tool authentication status`,
   const { enabled: crossSessionEnabled } = useCrossSessionMessageEnabled();
 
   // Supporting agents (mid-turn delivery) send immediately, busy or not.
-  // Non-supporting agents can no longer send while the agent is replying —
-  // that path is hard-blocked with a toast; the only way to queue a message
-  // while busy is the explicit "add to queue" entry (handleAddToQueue below).
+  // Non-supporting agents wait until the current reply finishes.
   const onSendHandler = async (message: string): Promise<void | false> => {
     if (!supportsMidturnDelivery && isBusy) {
       Message.warning(
         t('conversation.commandQueue.midturnBlocked', {
           defaultValue:
-            'This agent is still working, so the message can’t be sent directly. Save it to Draft box and send it later.',
+            'This agent is still working, so the message can’t be sent directly. Please wait for completion before sending.',
         })
       );
       return false;
@@ -488,26 +486,6 @@ Please check your local CLI tool authentication status`,
       setInterrupting(false);
     }
   };
-
-  // Explicit "add to queue" entry — visibility is keyed only to the user's
-  // own input (non-empty draft), never to the agent's busy/replying state:
-  // tying it to that racy, async signal made the entry appear/disappear
-  // unpredictably. Clicking while idle is semantically fine — the queue's own
-  // mode governs (auto drains immediately, manual holds). Shown for both
-  // supporting and non-supporting backends. Clears the draft the same way a
-  // send would.
-  const canQueueCurrentDraft = content.trim().length > 0;
-  const handleAddToQueue = useCallback(() => {
-    const allFiles = collectChatFileRefs(uploadFile, atPath);
-    // `@@` references must ride along, and must be released from the send box
-    // the same way the draft text is — otherwise they leak into whatever the
-    // user sends next.
-    enqueue({ input: content, files: allFiles, sessions: selectedSessions.length > 0 ? selectedSessions : undefined });
-    setContent('');
-    clearFiles();
-    setSelectedSessions([]);
-    emitter.emit('acp.selected.file.clear');
-  }, [atPath, clearFiles, content, enqueue, selectedSessions, setContent, uploadFile]);
 
   const handleEditQueuedCommand = useCallback(
     (item: ConversationCommandQueueItem) => {
@@ -833,7 +811,7 @@ Please check your local CLI tool authentication status`,
           !supportsMidturnDelivery && isBusy
             ? t('conversation.commandQueue.midturnBlockedSendHint', {
                 defaultValue:
-                  'The current agent is still working and cannot receive another message yet. Add it to Draft box instead.',
+                  'The current agent is still working and cannot receive another message yet. Please wait for completion before sending.',
               })
             : undefined
         }
@@ -878,7 +856,6 @@ Please check your local CLI tool authentication status`,
         }
         prefix={
           <>
-            <ResearchModeSelector />
             {uploadFile.length > 0 && (
               <HorizontalFileList>
                 {uploadFile.map((path) => (
@@ -942,15 +919,7 @@ Please check your local CLI tool authentication status`,
             {tokenUsage ? <ContextUsageIndicator tokenUsage={tokenUsage} context_limit={context_limit} /> : undefined}
           </>
         }
-        onAddToDraft={handleAddToQueue}
-        addToDraftDisabled={!canQueueCurrentDraft}
-        addToDraftTooltip={
-          isBusy
-            ? t('conversation.commandQueue.addToQueueBusyHint', {
-                defaultValue: 'Save to Draft box and send it later.',
-              })
-            : t('conversation.commandQueue.addToQueue', { defaultValue: 'Save to Draft box' })
-        }
+        toolAction={<ResearchModeSelector />}
       ></SendBox>
       {isMobile && (
         <>
