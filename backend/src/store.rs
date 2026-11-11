@@ -164,6 +164,19 @@ impl Store {
         .await
     }
 
+    pub async fn set_research_thread(
+        &self,
+        id: &str,
+        thread: &str,
+        previous: Option<String>,
+    ) -> Result<()> {
+        let (id, thread) = (id.to_string(), thread.to_string());
+        self.call(move |db| {
+            db.execute("UPDATE conversations SET thread_id=?1, body=json_set(body,'$.extra.research_tool_thread',?1,'$.extra.previous_native_thread',?2) WHERE id=?3",params![thread,previous,id])?;
+            Ok(())
+        }).await
+    }
+
     pub async fn messages(&self, id: &str) -> Result<Vec<Value>> {
         let id = id.to_string();
         self.call(move |db| {

@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 
 fn validate(body: &Value, create: bool) -> Result<()> {
-    let fields = ["title", "objective", "evaluation", "constraints"];
+    let fields = ["title", "objective", "evaluation", "constraints", "plan"];
     let object = body
         .as_object()
         .ok_or_else(|| anyhow!("INVALID_RESEARCH_REQUEST"))?;
@@ -28,6 +28,20 @@ fn validate(body: &Value, create: bool) -> Result<()> {
             .as_str()
             .ok_or_else(|| anyhow!("INVALID_RESEARCH_REQUEST"))?;
         if value.trim().chars().count() < min || value.chars().count() > max || value.contains('\0')
+        {
+            bail!("INVALID_RESEARCH_REQUEST");
+        }
+    }
+    if let Some(plan) = body.get("plan") {
+        let steps = plan
+            .as_array()
+            .ok_or_else(|| anyhow!("INVALID_RESEARCH_REQUEST"))?;
+        if steps.len() > 30
+            || steps.iter().any(|step| {
+                !step.as_str().is_some_and(|s| {
+                    !s.trim().is_empty() && s.chars().count() <= 2000 && !s.contains('\0')
+                })
+            })
         {
             bail!("INVALID_RESEARCH_REQUEST");
         }
@@ -113,6 +127,7 @@ pub async fn dispatch(
                     value["revision"] = json!(1);
                     value["created_at"] = json!(now);
                     value["updated_at"] = json!(now);
+                    if value.get("plan").is_none() { value["plan"] = json!([]); }
                     tx.execute("INSERT INTO research_sessions(id,project_id,origin_conversation_id,body) VALUES(?,?,?,?)", params![id,project,source,value.to_string()])?;
                     tx.execute("INSERT INTO research_requests(project_id,request_id,request,result) VALUES(?,?,?,?)", params![project,key,body.to_string(),value.to_string()])?;
                     value
@@ -123,6 +138,7 @@ pub async fn dispatch(
                 validate(&body, false)?;
                 if value["revision"] != body["expected_revision"] { bail!("RESEARCH_REVISION_CONFLICT"); }
                 for field in ["title", "objective", "evaluation", "constraints"] { value[field] = body[field].clone(); }
+                if let Some(plan) = body.get("plan") { value["plan"] = plan.clone(); }
                 value["revision"] = json!(body["expected_revision"].as_u64().unwrap() + 1);
                 value["updated_at"] = json!(chat::now());
                 tx.execute("UPDATE research_sessions SET body=? WHERE project_id=? AND id=?", params![value.to_string(),project,id])?;

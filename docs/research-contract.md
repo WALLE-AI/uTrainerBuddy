@@ -46,6 +46,18 @@ Rust Backend 与现有 metadata.sqlite 是唯一持久状态写入方。桌面�
 
 ResearchSession 首批字段：`id, project_id, origin_conversation_id, title, objective, evaluation, constraints, revision, created_at, updated_at`。title 1–200 字符，objective 1–16000，evaluation/constraints 各最多 16000，request_id 1–128。首批不接受未知字段，避免调用者误以为提交了预算或执行参数。
 
+2026-11-11 A1 扩展：新增 `plan: string[]`，最多 30 步，每步 1–2000 字符。旧记录缺省为空；创建可省略，修改省略时保留现有计划。计划是研究意图，不是 Agent 临时任务进度或真实 Run 状态。用户从会话提出需求，智能体负责生成/保存；手动编辑仅作辅助。
+
+## 已实现的会话研究工具
+
+通过 Codex App Server 的动态工具注册 `research_list/get/create/update`。模型不接收 HTTP token，不允许提供 project_id 或 origin_conversation_id；后端从当前 ActiveTurn 对应的 conversation 解析身份，get/update 还校验目标属于该来源会话。调用必须匹配当前 native thread/turn 且尚未取消。未知参数/工具及过期调用返回失败。所有写操作复用上面的 research dispatch/事务/revision/幂等规则，模型收到实际 ID 和版本后才能报告保存成功。
+
+create/update 工具要求非空 plan；list/get 返回持久数据。结果不会触发训练；Run 工具尚未开放。工具变化发布 research.updated 事件，当前工作台通过来源隔离的 3 秒可见轮询自动刷新，未把内存通知当作未来的可靠结果 outbox。
+
+本机 Codex 0.167.0 导出 schema 支持 thread/start.dynamicTools，thread/resume 没有补装字段；已有工具随原生线程持久化。旧应用会话首次启用工具时新建原生线程，原线程 ID 保存为 previous_native_thread，应用聊天记录不删；迁移传入最近 20 条文本、每条最多 2000 字符的历史数据，并显示升级提示。之后恢复同一工具线程，启动/恢复均更新研究指令。此处是明确的一次迁移，不宣称完整原生上下文无损。
+
+协议依据：[官方 App Server 文档](https://learn.chatgpt.com/docs/app-server#dynamic-tool-calls-experimental) 与本机 `app-server generate-json-schema --experimental` 的 DynamicToolSpec / DynamicToolCallParams / DynamicToolCallResponse。实验性协议变化需重新验收；适配失败不能降级为虚假的保存成功。
+
 ## Run 状态与执行边界
 
 `queued → preparing → running → succeeded | failed`；未派发 queued 可以直接 cancelled。已派发/正在运行的取消进入 cancelling，只有执行器确认进程终止才能进入 cancelled；自然完成与取消竞争按执行器证据收敛，不能伪造退出码。

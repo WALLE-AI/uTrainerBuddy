@@ -10,11 +10,12 @@ const root = resolve(repoRoot, 'backend/test-data');
 await mkdir(root, { recursive: true });
 const dataDir = await mkdtemp(resolve(root, 'protocol-'));
 const exe = process.platform === 'win32' ? '.exe' : '';
+const target = resolve(repoRoot, process.env.TRAINERBUDDY_TEST_TARGET || 'backend/target', 'debug');
 const token = randomBytes(32).toString('hex');
 let child, base;
 async function start() {
-  child = spawn(resolve(repoRoot, `backend/target/debug/trainerbuddy-backend${exe}`), ['--data-dir', dataDir], {
-    env: { ...rustEnv, TRAINERBUDDY_CODEX_BIN: resolve(repoRoot, `backend/target/debug/examples/codex_fixture${exe}`) },
+  child = spawn(resolve(target, `trainerbuddy-backend${exe}`), ['--data-dir', dataDir], {
+    env: { ...rustEnv, TRAINERBUDDY_CODEX_BIN: resolve(target, `examples/codex_fixture${exe}`) },
     stdio: ['pipe','pipe','inherit'], windowsHide: true,
   });
   const lines = createInterface({input:child.stdout});

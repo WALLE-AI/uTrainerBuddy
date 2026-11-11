@@ -147,7 +147,10 @@ export function ProjectWorkbench({
       className='workbench-body'
       tabIndex={0}
     >
-      {conversationId && <ResearchGoals projectId={projectId} conversationId={conversationId} active={enabled && tab === 'plan'} />}
+      {conversationId && <ResearchGoals projectId={projectId} conversationId={conversationId} active={enabled && tab === 'plan'} onDiscuss={researchId => {
+        if (conversationId !== currentConversation) { Message.info(label('research.sourceSwitch')); return; }
+        reference(`${label('research.discussPrompt')}${researchId ? `\nResearch ID: ${researchId}` : ''}`);
+      }} />}
       {conversationId && <ResearchComputeCard projectId={projectId} active={enabled && tab === 'plan'} onOpenFiles={() => selectTab('files')} />}
       <div className='workbench-section-heading'>
         <h3>{label('latestPlan')}</h3>

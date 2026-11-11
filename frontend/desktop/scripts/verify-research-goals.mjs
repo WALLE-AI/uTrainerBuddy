@@ -9,13 +9,15 @@ import { rustEnv } from '../../../backend/scripts/toolchain.mjs';
 
 const desktop = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const root = resolve(desktop, '../..');
+const target = resolve(root, process.env.TRAINERBUDDY_TEST_TARGET || 'backend/target', 'debug');
+const agent = process.argv.includes('--agent');
 const tests = resolve(root, '.tools/desktop-tests');
 await mkdir(tests, { recursive: true });
 const folder = await mkdtemp(resolve(tests, 'research-goals-'));
 const token = randomBytes(32).toString('hex');
 let backend;
 try {
-  backend = spawn(resolve(root, 'backend/target/debug/trainerbuddy-backend.exe'), ['--data-dir', resolve(folder, 'backend')], { env: rustEnv, stdio: ['pipe', 'pipe', 'inherit'], windowsHide: true });
+  backend = spawn(resolve(target, 'trainerbuddy-backend.exe'), ['--data-dir', resolve(folder, 'backend')], { env: agent ? { ...rustEnv, TRAINERBUDDY_CODEX_BIN: resolve(target, 'examples/codex_fixture.exe') } : rustEnv, stdio: ['pipe', 'pipe', 'inherit'], windowsHide: true });
   const lines = createInterface({ input: backend.stdout });
   const ready = await new Promise((accept, reject) => {
     const timer = setTimeout(() => { cleanup(); reject(Error('Backend startup timed out')); }, 20000);
@@ -57,6 +59,7 @@ app.whenReady().then(async()=>{
  };
  const collection='projects/'+${JSON.stringify(sources[0].project_id)}+'/research';
  await wait('!!document.querySelector("[data-testid=goal-new]") && !document.querySelector("[data-testid=goal-new]").disabled');
+ await click('[data-testid=research-goals] summary');
  await click('[data-testid=goal-new]');
  await input('title','中文研究目标');await input('objective','Real baseline goal');
  await click('#switch');
@@ -88,6 +91,14 @@ app.whenReady().then(async()=>{
  await new Promise(done=>{win.webContents.once('did-finish-load',done);win.reload()});
  await wait('Array.from(document.querySelectorAll("[data-testid=goal-select] option")).some(option=>option.value==='+JSON.stringify(goals[0].id)+')');
  assert.equal((await api('GET',collection))[0].objective,'Resolved edit');
+ ${agent ? `
+ await click('#switch');
+ await api('POST','conversations/${sources[1].id}/messages',{content:'research',loading_id:'research-ui-fixture'});
+ await wait('document.querySelector("[data-testid=research-plan]")?.innerText.includes("Compare measured evidence")');
+ const persisted=await api('GET','projects/${sources[1].project_id}/research');
+ assert.equal(persisted.length,1);assert.equal(persisted[0].plan.length,3);
+ console.log('PASS agent protocol fixture -> real research API -> automatic workbench plan display');
+ ` : ''}
  console.log('PASS actual Rust + goal UI: Chinese creation, scope/draft isolation, tab preservation, lost-response idempotent retry, conflict recovery, edit persistence, chat draft intact');
  clearTimeout(timer);win.destroy();app.quit();
 }).catch(error=>{console.error(error);app.exit(1)});

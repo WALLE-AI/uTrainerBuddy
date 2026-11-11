@@ -10,12 +10,12 @@ type Draft = { id: string | null; revision: number; fields: GoalFields; requestI
 const drafts = new Map<string, Draft>();
 const pick = (goal: GoalFields): GoalFields => ({ title: goal.title, objective: goal.objective, evaluation: goal.evaluation, constraints: goal.constraints });
 
-export function ResearchGoals(props: { projectId: string; conversationId: string; active: boolean }) {
+export function ResearchGoals(props: { projectId: string; conversationId: string; active: boolean; onDiscuss?: (researchId?: string) => void }) {
   const scope = JSON.stringify([props.projectId, props.conversationId]);
   return <ScopedGoals key={scope} {...props} scope={scope} />;
 }
 
-function ScopedGoals({ projectId, conversationId, active, scope }: { projectId: string; conversationId: string; active: boolean; scope: string }) {
+function ScopedGoals({ projectId, conversationId, active, scope, onDiscuss }: { projectId: string; conversationId: string; active: boolean; scope: string; onDiscuss?: (researchId?: string) => void }) {
   const { t } = useTranslation();
   const label = (key: string) => t(`conversation.workbench.research.${key}`);
   const fieldId = useId();
@@ -30,9 +30,10 @@ function ScopedGoals({ projectId, conversationId, active, scope }: { projectId: 
   const path = goalPath(projectId);
   const list = useSWR(active ? ['research-goals', projectId, conversationId] : null,
     () => researchRequest<ResearchGoal[]>('get', `${path}?conversation_id=${encodeURIComponent(conversationId)}`),
-    { refreshInterval: 10000, keepPreviousData: false, shouldRetryOnError: false });
+    { refreshInterval: 3000, keepPreviousData: false, shouldRetryOnError: false });
   const goals = (list.data ?? []).filter(goal => goal.project_id === projectId && goal.origin_conversation_id === conversationId);
-  const current = goals.find(goal => goal.id === selected);
+  const selectedId = selected || (goals.length === 1 ? goals[0].id : '');
+  const current = goals.find(goal => goal.id === selectedId);
   const changeDraft = (value: Draft | null) => {
     if (value) drafts.set(scope, value); else drafts.delete(scope);
     if (mounted.current) setDraft(value);
@@ -89,17 +90,19 @@ function ScopedGoals({ projectId, conversationId, active, scope }: { projectId: 
       <button type='button' className='workbench-refresh' disabled={!active || list.isValidating} onClick={() => void list.mutate().catch(() => {})}>{label('refresh')}</button>
     </div>
     <p className='workbench-note'>{label('scope')}</p>
+    {onDiscuss && <button type='button' className='workbench-button' disabled={!active} onClick={() => onDiscuss(current?.id)}>{label('discuss')}</button>}
     {list.error ? <p role='alert'>{label('loadError')}</p> : list.isLoading ? <p role='status'>{label('loading')}</p> : !goals.length && <p>{label('empty')}</p>}
     <label htmlFor={`${fieldId}-select`}>{label('select')}</label>
-    <select id={`${fieldId}-select`} data-testid='goal-select' value={selected} disabled={!!draft || busy || !active || !!list.error} onChange={event => { setSelected(event.target.value); setSaved(false); }}>
+    <select id={`${fieldId}-select`} data-testid='goal-select' value={selectedId} disabled={!!draft || busy || !active || !!list.error} onChange={event => { setSelected(event.target.value); setSaved(false); }}>
       <option value=''>{label('choose')}</option>
       {goals.map(goal => <option key={goal.id} value={goal.id}>{goal.title}</option>)}
     </select>
     {!draft && <div className='workbench-compute-actions'>
-      <button type='button' data-testid='goal-new' className='workbench-button' disabled={!active || !!list.error || !list.data} onClick={() => begin()}>{label('create')}</button>
+      <details><summary>{label('manual')}</summary><button type='button' data-testid='goal-new' className='workbench-button' disabled={!active || !!list.error || !list.data} onClick={() => begin()}>{label('create')}</button></details>
       <button type='button' data-testid='goal-edit' className='workbench-button' disabled={!active || !current || !!list.error} onClick={() => current && begin(current)}>{label('edit')}</button>
     </div>}
     {!draft && current && !list.error && <dl className='research-goal-detail'>{fields.map(field => <div key={field}><dt>{label(field)}</dt><dd>{current[field] || label('unspecified')}</dd></div>)}<div><dt>{label('revision')}</dt><dd>{current.revision}</dd></div></dl>}
+    {current && (!draft || draft.id === current.id) && !list.error && <div data-testid='research-plan'><h4>{label('plan')}</h4>{current.plan?.length ? <ol>{current.plan.map((step,index) => <li key={index}>{step}</li>)}</ol> : <p className='workbench-note'>{label('noPlan')}</p>}<p className='workbench-note'>{label('planBoundary')}</p></div>}
     {draft && <form onSubmit={event => { event.preventDefault(); void save(); }}>
       <p className='workbench-note'>{label(draft.attempted ? 'uncertain' : 'draftHint')}</p>
       {fields.map(field => <label key={field} htmlFor={`${fieldId}-${field}`}>{label(field)}
