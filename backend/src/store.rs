@@ -172,7 +172,7 @@ impl Store {
     ) -> Result<()> {
         let (id, thread) = (id.to_string(), thread.to_string());
         self.call(move |db| {
-            db.execute("UPDATE conversations SET thread_id=?1, body=json_set(body,'$.extra.research_tool_thread',?1,'$.extra.previous_native_thread',?2) WHERE id=?3",params![thread,previous,id])?;
+            db.execute("UPDATE conversations SET thread_id=?1, body=json_set(body,'$.extra.research_tool_thread',?1,'$.extra.research_tool_version',2,'$.extra.previous_native_thread',?2) WHERE id=?3",params![thread,previous,id])?;
             Ok(())
         }).await
     }

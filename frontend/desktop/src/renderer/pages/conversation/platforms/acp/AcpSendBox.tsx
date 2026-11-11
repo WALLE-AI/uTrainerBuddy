@@ -1,3 +1,4 @@
+import { getResearchMode, ResearchModeSelector } from '@/renderer/components/research/ResearchMode';
 import { ipcBridge } from '@/common';
 import type { IConversationMcpStatus } from '@/common/config/storage';
 import { isBackendHttpError } from '@/common/adapter/httpBridge';
@@ -288,7 +289,7 @@ const AcpSendBox: React.FC<{
   });
 
   const executeCommand = useCallback(
-    async ({ input, files, sessions }: Pick<ConversationCommandQueueItem, 'input' | 'files' | 'sessions'>) => {
+    async ({ input, files, sessions, research_mode = getResearchMode() }: Pick<ConversationCommandQueueItem, 'input' | 'files' | 'sessions' | 'research_mode'>) => {
       // Plain user text; the backend resolves each ChatFileRef and injects the
       // [[AION_FILES]] marker at the send edge (no front-end path/marker building).
       try {
@@ -308,6 +309,7 @@ const AcpSendBox: React.FC<{
         const result = await ipcBridge.acpConversation.sendMessage.invoke({
           input,
           conversation_id,
+          research_mode,
           files,
           // `@@` references. Dropping this here is a silent failure: the agent
           // simply never receives the session block.
@@ -759,14 +761,14 @@ Please check your local CLI tool authentication status`,
         // Removing first closes that race in both cases.
         remove(item.id);
         try {
-          await executeCommand({ input: item.input, files: item.files, sessions: item.sessions });
+          await executeCommand({ input: item.input, files: item.files, sessions: item.sessions, research_mode: item.research_mode });
         } catch {
           // executeCommand already surfaces the failure (busy-conflict toast,
           // error message card, etc.) via its own catch path — don't show a
           // second one. Restore the user's content instead of dropping it:
           // enqueue appends to the end, so promote it back to the front to
           // match "send now" intent (it was already next in line).
-          const restored = enqueue({ input: item.input, files: item.files, sessions: item.sessions });
+          const restored = enqueue({ input: item.input, files: item.files, sessions: item.sessions, research_mode: item.research_mode });
           if (restored) prioritize(restored.id);
         }
         return;
@@ -876,6 +878,7 @@ Please check your local CLI tool authentication status`,
         }
         prefix={
           <>
+            <ResearchModeSelector />
             {uploadFile.length > 0 && (
               <HorizontalFileList>
                 {uploadFile.map((path) => (

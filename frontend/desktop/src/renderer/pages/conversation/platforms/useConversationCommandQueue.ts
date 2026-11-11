@@ -1,3 +1,4 @@
+import { getResearchMode, type ResearchMode } from '@/renderer/components/research/ResearchMode';
 import { ipcBridge } from '@/common';
 import type { SessionRef } from '@/common/adapter/ipcBridge';
 import { type ChatFileRef, chatFileRefKey, isChatFileRef } from '@/common/types/chatFile';
@@ -22,6 +23,7 @@ export type ConversationCommandQueueItem = {
    *  simply never sees the session block. Ids only, so this adds a handful of
    *  bytes to the persisted state. */
   sessions?: SessionRef[];
+  research_mode?: ResearchMode;
   created_at: number;
 };
 
@@ -151,6 +153,7 @@ const normalizeQueueItem = (item: unknown): ConversationCommandQueueItem | null 
     // Absent in state persisted before `@@` existed, so this must tolerate
     // `undefined` rather than rejecting the whole item.
     sessions: normalizeSessionRefs(candidate.sessions),
+    research_mode: candidate.research_mode === 'deep' ? 'deep' : 'quick',
     created_at: candidate.created_at,
   };
 
@@ -206,13 +209,15 @@ export const createQueuedCommandItem = ({
   input,
   files,
   sessions,
-}: Pick<ConversationCommandQueueItem, 'input' | 'files' | 'sessions'>): ConversationCommandQueueItem => ({
+  research_mode = getResearchMode(),
+}: Pick<ConversationCommandQueueItem, 'input' | 'files' | 'sessions' | 'research_mode'>): ConversationCommandQueueItem => ({
   id: uuid(),
   input,
   files: uniqueFiles(files),
   // Normalised on the way in as well as on the way out of persistence, so an
   // empty array never survives as `[]` and the state stays comparable.
   sessions: normalizeSessionRefs(sessions),
+  research_mode,
   created_at: Date.now(),
 });
 
@@ -349,7 +354,7 @@ export const restoreQueuedCommand = (
 export const updateQueuedCommand = (
   items: ConversationCommandQueueItem[],
   commandId: string,
-  updates: Partial<Pick<ConversationCommandQueueItem, 'input' | 'files' | 'sessions'>>
+  updates: Partial<Pick<ConversationCommandQueueItem, 'input' | 'files' | 'sessions' | 'research_mode'>>
 ): ConversationCommandQueueItem[] =>
   items.map((item) =>
     item.id === commandId
@@ -420,7 +425,7 @@ type UseConversationCommandQueueOptions = {
 /// `sessions` is part of the enqueue input, not just of the stored item: a
 /// message that reaches the draft box and loses its `@@` references fails
 /// silently — the send succeeds and the agent simply never sees the block.
-type EnqueueCommandInput = Pick<ConversationCommandQueueItem, 'input' | 'files' | 'sessions'>;
+type EnqueueCommandInput = Pick<ConversationCommandQueueItem, 'input' | 'files' | 'sessions' | 'research_mode'>;
 type UpdateCommandInput = Pick<ConversationCommandQueueItem, 'input'>;
 type BackgroundCommandQueueRunner = {
   conversation_id: string;
@@ -768,13 +773,13 @@ export const useConversationCommandQueue = ({
   );
 
   const enqueue = useCallback(
-    ({ input, files, sessions }: EnqueueCommandInput) => {
+    ({ input, files, sessions, research_mode }: EnqueueCommandInput) => {
       if (!enabled) {
         return null;
       }
 
       const currentState = normalizeQueueState(stateRef.current);
-      const item = createQueuedCommandItem({ input, files, sessions });
+      const item = createQueuedCommandItem({ input, files, sessions, research_mode });
       const validation = validateQueuedCommandItem(item, currentState);
 
       if (isQueueValidationFailure(validation)) {

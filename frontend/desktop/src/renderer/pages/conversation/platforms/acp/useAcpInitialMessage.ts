@@ -79,6 +79,7 @@ export const useAcpInitialMessage = ({
           conversation_id: conversation_id,
           files,
           loading_id: `initial:${conversation_id}`,
+          research_mode: initialMessage.research_mode === 'deep' ? 'deep' : 'quick',
         });
         markSendAccepted?.(result.turn_id, result.runtime, result.msg_id);
 

@@ -396,6 +396,7 @@ export const conversation = {
       // list and neither side would report an error.
       sessions: p.sessions,
       loading_id: p.loading_id,
+      research_mode: p.research_mode,
       inject_skills: p.inject_skills,
     })
   ),
@@ -1808,6 +1809,7 @@ export interface ICronJobUpdateParams {
 // ---------------------------------------------------------------------------
 
 interface ISendMessageParams {
+  research_mode?: 'quick' | 'deep';
   input: string;
   conversation_id: string;
   /** Source-tagged file refs; the backend resolves each to an absolute path and

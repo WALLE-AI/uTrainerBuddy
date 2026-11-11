@@ -34,7 +34,7 @@ fn main() {
                 if request["method"] == "thread/start" {
                     assert_eq!(
                         request["params"]["dynamicTools"].as_array().unwrap().len(),
-                        4
+                        7
                     );
                 }
                 assert!(request["params"]["developerInstructions"]
@@ -47,6 +47,7 @@ fn main() {
                 send(json!({"id":id,"result":{"turn":{"id":"turn"}}}));
                 let prompt = request["params"]["input"][0]["text"].as_str().unwrap();
                 match prompt {
+                    "document" => send(json!({"id":"document-write","method":"item/tool/call","params":{"threadId":"thread","turnId":"turn","callId":"document","tool":"research_document_write","arguments":{"id":null,"expected_hash":null,"request_id":"fixture-plan","title":"Research document","markdown":"# Research plan\n\n## Goal\nDeterministic baseline\n\n## Evidence\nProtocol fixture only; no external research.\n\n## Experiments\n1. Inspect context\n2. Fix evaluation\n3. Compare evidence\n"}}})),
                     "research" => send(
                         json!({"id":"research-create","method":"item/tool/call","params":{"threadId":"thread","turnId":"turn","callId":"create","tool":"research_create","arguments":{"request_id":"fixture-goal","title":"智能体研究计划","objective":"CPU baseline","evaluation":"fixed seed","constraints":"no training now","plan":["Inspect the project","Define a deterministic baseline"]}}}),
                     ),
@@ -106,7 +107,7 @@ fn main() {
                     json!({"id":"research-update","method":"item/tool/call","params":{"threadId":"thread","turnId":"turn","callId":"update","tool":"research_update","arguments":args}}),
                 );
             }
-            None if id == "research-update" || id == "research-read" => {
+            None if id == "research-update" || id == "research-read" || id == "document-write" => {
                 assert_eq!(request["result"]["success"], true);
                 complete(
                     request["result"]["contentItems"][0]["text"]

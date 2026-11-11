@@ -8,7 +8,8 @@ import { ipcBridge } from '@/common';
 import { useCurrentConversation } from '@/renderer/pages/conversation/explorer/currentConversationStore';
 import { ProjectFiles } from './ProjectFiles';
 import { ResearchComputeCard } from '../compute/ResearchComputeCard';
-import { ResearchGoals } from '../research/ResearchGoals';
+import { PlanDocuments } from '../research/PlanDocuments';
+import { usePreviewContext } from '@/renderer/pages/conversation/Preview';
 import { emitter } from '@/renderer/utils/emitter';
 import { Message } from '@arco-design/web-react';
 import { Close, FullScreen, Pushpin, Refresh } from '@icon-park/react';
@@ -36,6 +37,7 @@ export function ProjectWorkbench({
   expanded = false,
 }: ProjectWorkbenchProps) {
   const { t } = useTranslation();
+  const preview = usePreviewContext();
   const label = (key: string) => t(`conversation.workbench.${key}`);
   const id = useId();
   const currentConversation = useCurrentConversation();
@@ -147,10 +149,7 @@ export function ProjectWorkbench({
       className='workbench-body'
       tabIndex={0}
     >
-      {conversationId && <ResearchGoals projectId={projectId} conversationId={conversationId} active={enabled && tab === 'plan'} onDiscuss={researchId => {
-        if (conversationId !== currentConversation) { Message.info(label('research.sourceSwitch')); return; }
-        reference(`${label('research.discussPrompt')}${researchId ? `\nResearch ID: ${researchId}` : ''}`);
-      }} />}
+      {conversationId && <PlanDocuments projectId={projectId} conversationId={conversationId} active={enabled && tab === 'plan'} onOpen={doc=>preview.openPreview(doc.markdown ?? '', 'markdown', {title:doc.title,file_name:doc.path,editable:false})} />}
       {conversationId && <ResearchComputeCard projectId={projectId} active={enabled && tab === 'plan'} onOpenFiles={() => selectTab('files')} />}
       <div className='workbench-section-heading'>
         <h3>{label('latestPlan')}</h3>

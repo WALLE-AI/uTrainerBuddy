@@ -1,3 +1,4 @@
+import { getResearchMode } from '@/renderer/components/research/ResearchMode';
 /**
  * @license
  * Copyright 2025 uBidBuddy
@@ -100,6 +101,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
   const sendingRef = useRef(false);
 
   const handleSend = useCallback(async () => {
+    const research_mode = getResearchMode();
     if (!selectedAssistantId) {
       throw new Error(t('conversation.createFailed'));
     }
@@ -267,6 +269,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
       // auto-sending a blank first turn.
       if (input.trim()) {
         const initialMessage = {
+          research_mode,
           input,
           files: files.length > 0 ? files : undefined,
         };

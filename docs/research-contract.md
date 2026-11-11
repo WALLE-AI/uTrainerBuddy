@@ -1,5 +1,18 @@
 # 原生研究契约 v1
 
+## 2026-11-11 生效补充：项目计划文档
+
+本节优先于下方数据库目标/步骤数组的正式计划定义。消息接受 `research_mode: quick | deep`（省略为 quick），随用户消息持久化。首页首条消息和命令队列保留提交时模式。深度研究通过现有模型回合调查问题并生成文件，模型需说明无法验证的来源；提示词不构成训练授权。
+
+正式计划正文唯一权威为 `<project.local_root>/research/plans/<conversation_id>/<id>.md`。首行 HTML 注释存储身份、标题、revision、last_request_id、updated_at；其后为 Markdown。SQLite 仅解析现有项目/会话作用域，不复制正文。旧研究记录/API保留兼容，不作为新计划默认写入目标。
+
+- `research_document_list/read/write` 由 Backend 从当前原生回合绑定项目与会话，模型不能传入任意根目录。创建以 request_id 为文档身份；修改携带 id、唯一 request_id、expected_hash、完整 title/markdown。重复请求返回同一内容；旧 hash 或重复请求的不同正文拒绝覆盖。
+- 更新前归档旧文件至同目录 `.history/<id>-<sha256>.md`；写临时文件、同步后替换目标。外部已发生的编辑通过内容摘要检测；不宣称对不配合锁定的外部编辑器提供跨进程事务。
+- `GET /api/v1/projects/:project/research-documents?conversation_id=:conversation` 列出元数据；`GET .../:id?conversation_id=...` 每次读取实际文件正文及 sha256。路径须在项目内，拒绝非法身份、符号链接、无效文件头和超限文件；读取失败明确显示错误。
+- 工作台复用现有 Preview 展开只读 Markdown；后续修改通过会话，外部编辑可保留文件头后修改正文。当前列表按来源会话隔离，上限 200 条。旧会话首次升级文档工具保留应用历史及原生会话引用，并传入有界上下文。
+
+执行、预算强制控制、远端算力提交和结果回流仍属于 A2–A4，未因文档落盘而完成。
+
 状态：R0 接口设计基线；首批研究目标创建、列表、详情、编辑接口已实现，并通过真实 HTTP 与进程重启测试。其余为后续 R2/R3 契约，尚未实现；Run 提交当前返回 501，不返回假成功。
 
 ## 对象与所有权

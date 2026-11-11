@@ -2,12 +2,6 @@
 .trainer-project-workbench .trainer-workbench-header { padding: 8px 17px 10px; gap: 6px; justify-content: flex-end; }
 .workbench-files-panel[hidden] { display: none; }
 .workbench-body[hidden] { display: none; }
-.research-goals label { display: block; margin: 10px 0 5px; font-size: 12px; }
-.research-goals textarea, .research-goals select { display: block; box-sizing: border-box; width: 100%; margin-top: 6px; padding: 8px; border: 1px solid var(--color-border-2); border-radius: 6px; background: var(--bg-1); color: var(--text-primary); font: inherit; }
-.research-goals textarea { resize: vertical; }
-.research-goals textarea:focus-visible, .research-goals select:focus-visible { outline: 2px solid var(--aou-6); }
-.research-goal-detail dt { margin-top: 12px; color: var(--color-text-3); }
-.research-goal-detail dd { margin: 4px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .workbench-body.workbench-files-panel { padding-inline: 0; }
 .workbench-project-files > .workbench-section-heading, .workbench-project-files > .workbench-note { margin-inline: 17px; }
 .workbench-project-files .workspace-tree { margin-inline: 12px; }

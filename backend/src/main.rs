@@ -6,6 +6,7 @@ mod project_sync;
 mod remote_session;
 mod research;
 mod research_tools;
+mod research_documents;
 mod ssh_askpass;
 mod store;
 
