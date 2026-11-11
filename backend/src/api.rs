@@ -62,7 +62,7 @@ impl AppState {
         }
         let (events, _) = broadcast::channel(1024);
         let compute = crate::compute::Compute::new(store.clone()).await?;
-        Ok(Arc::new(Self {
+        let state = Arc::new(Self {
             sync_active: Mutex::new(Default::default()),
             compute,
             chat: Arc::new(ChatHost {
@@ -78,7 +78,9 @@ impl AppState {
             origin,
             codex_installed: harness::codex::find_binary().is_some(),
             models: Mutex::new(None),
-        }))
+        });
+        crate::runs::start_engine(&state);
+        Ok(state)
     }
     pub fn health(&self) -> Value {
         json!({"service":"utrainerbuddy-backend","protocol_version":1,"instance_id":self.instance,"workspace_id":"local","data_dir":self.chat.data_dir,"port":self.port})
@@ -235,6 +237,8 @@ pub async fn api(
                 | "REMOTE_FILE_IO_FAILED" => (StatusCode::BAD_REQUEST, message.as_str()),
                 "IDEMPOTENCY_CONFLICT" => (StatusCode::CONFLICT, "IDEMPOTENCY_CONFLICT"),
                 "PLAN_CONFLICT"
+                | "RESEARCH_CONTROL_CONFLICT"
+                | "RESEARCH_PAUSED"
                 | "RESEARCH_REVISION_CONFLICT"
                 | "BINDING_CONFLICT"
                 | "COMPUTE_TARGET_CHANGED"
@@ -279,6 +283,8 @@ async fn dispatch(
     method: &Method,
     body: Value,
 ) -> Result<Value> {
+    if let Some(result) = crate::research_control::dispatch(&s.chat.store, method, path, q, &body).await { return result; }
+    if let Some(result) = crate::runs::dispatch(&s.chat.store, &s.chat.data_dir, method, path, q, &body).await { return result; }
     if let Some(result) = crate::research_documents::dispatch(&s.chat.store, method, path, q, &body).await { return result; }
     if let Some(result) = crate::research::dispatch(&s.chat.store, method, path, q, &body).await {
         return result;
@@ -410,11 +416,10 @@ async fn dispatch(
             );
             return Ok(c);
         }
+        ("GET", "skills") | ("GET", "skills/available") => return Ok(crate::agent_resources::list()),
+        ("GET", "mcp/servers") => return Ok(crate::agent_resources::mcp_servers()),
         ("GET", "models/providers")
         | ("GET", "providers")
-        | ("GET", "mcp/servers")
-        | ("GET", "skills")
-        | ("GET", "skills/available")
         | ("GET", "cron/jobs")
         | ("GET", "teams")
         | ("GET", "remote-agents")

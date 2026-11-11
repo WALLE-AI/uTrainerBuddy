@@ -65,7 +65,7 @@ ResearchSession 首批字段：`id, project_id, origin_conversation_id, title, o
 
 通过 Codex App Server 的动态工具注册 `research_list/get/create/update`。模型不接收 HTTP token，不允许提供 project_id 或 origin_conversation_id；后端从当前 ActiveTurn 对应的 conversation 解析身份，get/update 还校验目标属于该来源会话。调用必须匹配当前 native thread/turn 且尚未取消。未知参数/工具及过期调用返回失败。所有写操作复用上面的 research dispatch/事务/revision/幂等规则，模型收到实际 ID 和版本后才能报告保存成功。
 
-create/update 工具要求非空 plan；list/get 返回持久数据。结果不会触发训练；Run 工具尚未开放。工具变化发布 research.updated 事件，当前工作台通过来源隔离的 3 秒可见轮询自动刷新，未把内存通知当作未来的可靠结果 outbox。
+create/update 工具要求非空 plan；list/get 返回持久数据。保存研究目标不会触发训练。2026-11-11 本地阶段另行开放实验/Run 工具，见下方实现补充；内存 research.updated 事件不承担可靠结果投递。
 
 本机 Codex 0.167.0 导出 schema 支持 thread/start.dynamicTools，thread/resume 没有补装字段；已有工具随原生线程持久化。旧应用会话首次启用工具时新建原生线程，原线程 ID 保存为 previous_native_thread，应用聊天记录不删；迁移传入最近 20 条文本、每条最多 2000 字符的历史数据，并显示升级提示。之后恢复同一工具线程，启动/恢复均更新研究指令。此处是明确的一次迁移，不宣称完整原生上下文无损。
 
@@ -90,3 +90,29 @@ create/update 工具要求非空 plan；list/get 返回持久数据。结果不�
 后续 experiments/runs/artifacts/events 分阶段迁移，各阶段需覆盖事务回滚、项目隔离、重启与重复提交。旧 `.data/research-gateway*` 数据只读保留，首批不导入；禁止直接写入旧库或按名字自动合并。导入需独立映射与回执，旧版本 Backend 遇新 schema 应拒绝启动，不能静默降级。
 
 现有 Host 发布与远端文件 RPC 不等于研究执行器。R3 先接本地受控子进程（独立 Run 目录、argv、日志文件、退出码、进程组），再扩展 SSH 持久 handle 和恢复。普通进程退出验证不能冒充真实 GPU 训练验收。
+
+## 2026-11-11 本地 Run 实现补充（当前实际接口）
+
+上述 queued/reconciling 是后续目标状态模型。本次本地实现为 `prepared → preparing → running → succeeded/failed`，取消为 `cancelling → cancelled`，无法核对 wrapper 为 `unknown`。prepared 取消无需进程回执。终态状态和通知在同一事务保存；source/argv/plan 固定后才能批准。
+
+数据库 v4 新增 experiments/runs/run_events/run_notices，升级前保存 metadata.pre-runs-v3.sqlite。计划正文仍由项目 Markdown 文件管理；Run 只保留提交时的不可变计划快照。
+
+接口使用 `/api/v1/projects/{project}/experiments`、`/runs`，显式 conversation_id；runs/{id} 提供 approve、cancel、evidence、artifact，runs/events 提供持久活动。没有复用旧 research-session Run 路由。approve 必须提供固定 spec_hash，且重新核验源码；全局只允许一个 preparing/running/cancelling/unknown 本地 Run。
+
+动态工具新增 research_skill_list/read、experiment_create/list、run_prepare/list/get/evidence/cancel。项目和来源会话由活动回合解析，模型不能指定另一身份，也没有批准启动工具。结果通知通过原 ChatHost 的稳定 loading_id 接受去重；busy 时等待，删除会话标记 conversation_deleted，不宣称外部调用 exactly-once。
+
+成功退出与证据就绪独立：成功但没有有效 evaluate 指标标记 incomplete，通知明确说明限制。错误/取消也回传实际回执供诊断。内部 wrapper 异常不伪造退出状态，未知任务保留槽位。
+
+系统提示词、9 个内置技能和只读文献 MCP 随 Backend 注册，资源版本 4。MCP 设置列表表示 configured，不冒充实时 connected。暂不提供 Agentic 自动启动或 SSH 训练。实现、限制及真实验证记录见 [阶段验收](../reports/desktop/research-workflow-implementation.md)。
+
+### 固定评估协议与比较增量
+
+当前资源版本升级为 5。新动态 run_prepare 要求 evaluation（dataset/dataset_version/split/evaluator_sha256/metric/direction/seed），原 HTTP 客户端仍可创建无协议 Run，但不可比较。协议摘要纳入 spec_hash，评估器文件摘要必须存在于快照清单。同实验不可更改协议。
+
+Wrapper 注入评估协议及 hash；指定的 evaluate 指标必须带匹配身份，最大 step 必须唯一，才满足成功运行的证据条件。`run_compare` 及 `POST /projects/{id}/runs/compare` 从两次真实证据比较相同协议和目标，返回 comparable、原因或指标/差值/方向。仅为声明一致的单次运行比较，不证明数据使用正确，不自动晋级。旧记录不回填协议。详情见 [比较验收](../reports/desktop/research-comparison-implementation.md)。
+
+### 暂停与结果通知恢复增量
+
+当前 schema v5、工具/技能版本 6。新增项目/来源会话 research_controls 与独立 run_notice_delivery；v4 升级前备份。GET/PUT `/projects/{id}/research-control?conversation_id=...` 使用 expected_revision 更新 paused。新训练启动和后台通知输入受理各自同事务校验暂停；已启动 Run 与已受理回合继续。准备、读取、取消及用户直接聊天不受此暂停限制。
+
+GET `/projects/{id}/run-notices` 查询通知状态，POST `/run-notices/{run}/retry` 仅重排 failed。最多 5 次发送尝试，指数退避；busy/paused 不扣失败次数；原始请求正文与稳定输入 ID 不变。accepted 不代表分析成功，不自动重放。删除会话的待处理通知停止投递。新增只读 research_control_get，模型无解除暂停能力。详情见 [控制阶段验收](../reports/desktop/research-control-implementation.md)。

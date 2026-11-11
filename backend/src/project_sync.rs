@@ -115,7 +115,7 @@ fn git(root: &Path, args: &[&str]) -> Result<Vec<u8>> {
     }
     Ok(out.stdout)
 }
-fn preview(root: &Path, data_dir: &Path, expected: Option<&str>) -> Result<Value> {
+pub(crate) fn preview(root: &Path, data_dir: &Path, expected: Option<&str>) -> Result<Value> {
     let top = String::from_utf8(git(root, &["rev-parse", "--show-toplevel"])?)?;
     if Path::new(top.trim()).canonicalize()? != root.canonicalize()? {
         bail!("PROJECT_GIT_ROOT_REQUIRED");

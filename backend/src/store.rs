@@ -13,7 +13,7 @@ impl Store {
     pub fn open(path: &Path) -> Result<Self> {
         let mut conn = Connection::open(path)?;
         let version: u32 = conn.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        if version > 3 {
+        if version > 5 {
             return Err(anyhow!("Database was created by a newer backend"));
         }
         if version == 1 {
@@ -27,6 +27,14 @@ impl Store {
             if !backup.exists() {
                 conn.execute("VACUUM INTO ?", [backup.to_string_lossy().as_ref()])?;
             }
+        }
+        if version == 3 {
+            let backup = path.with_extension("pre-runs-v3.sqlite");
+            if !backup.exists() { conn.execute("VACUUM INTO ?", [backup.to_string_lossy().as_ref()])?; }
+        }
+        if version == 4 {
+            let backup = path.with_extension("pre-control-v4.sqlite");
+            if !backup.exists() { conn.execute("VACUUM INTO ?", [backup.to_string_lossy().as_ref()])?; }
         }
         conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
             BEGIN IMMEDIATE;
@@ -43,7 +51,13 @@ impl Store {
             CREATE TABLE IF NOT EXISTS research_sessions(id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id), origin_conversation_id TEXT NOT NULL, body TEXT NOT NULL);
             CREATE INDEX IF NOT EXISTS research_scope ON research_sessions(project_id,origin_conversation_id);
             CREATE TABLE IF NOT EXISTS research_requests(project_id TEXT NOT NULL REFERENCES projects(id), request_id TEXT NOT NULL, request TEXT NOT NULL, result TEXT NOT NULL, PRIMARY KEY(project_id,request_id));
-            PRAGMA user_version=3;
+            CREATE TABLE IF NOT EXISTS experiments(id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id), conversation_id TEXT NOT NULL, request_id TEXT NOT NULL, request TEXT NOT NULL, body TEXT NOT NULL, UNIQUE(project_id,conversation_id,request_id));
+            CREATE TABLE IF NOT EXISTS runs(id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id), conversation_id TEXT NOT NULL, experiment_id TEXT NOT NULL REFERENCES experiments(id), request_id TEXT NOT NULL, request TEXT NOT NULL, body TEXT NOT NULL, UNIQUE(project_id,conversation_id,request_id));
+            CREATE TABLE IF NOT EXISTS run_events(seq INTEGER PRIMARY KEY AUTOINCREMENT, project_id TEXT NOT NULL, run_id TEXT NOT NULL, body TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS run_notices(run_id TEXT PRIMARY KEY REFERENCES runs(id), conversation_id TEXT NOT NULL, status TEXT NOT NULL, body TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS research_controls(project_id TEXT NOT NULL REFERENCES projects(id), conversation_id TEXT NOT NULL, paused INTEGER NOT NULL, revision INTEGER NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY(project_id,conversation_id));
+            CREATE TABLE IF NOT EXISTS run_notice_delivery(run_id TEXT PRIMARY KEY REFERENCES run_notices(run_id), attempts INTEGER NOT NULL DEFAULT 0, next_attempt_at INTEGER NOT NULL DEFAULT 0, last_error TEXT, accepted_at INTEGER);
+            PRAGMA user_version=5;
             COMMIT;")?;
         let mut grouped = std::collections::BTreeMap::<
             String,
@@ -172,7 +186,7 @@ impl Store {
     ) -> Result<()> {
         let (id, thread) = (id.to_string(), thread.to_string());
         self.call(move |db| {
-            db.execute("UPDATE conversations SET thread_id=?1, body=json_set(body,'$.extra.research_tool_thread',?1,'$.extra.research_tool_version',2,'$.extra.previous_native_thread',?2) WHERE id=?3",params![thread,previous,id])?;
+            db.execute("UPDATE conversations SET thread_id=?1, body=json_set(body,'$.extra.research_tool_thread',?1,'$.extra.research_tool_version',?4,'$.extra.prompt_version',?4,'$.extra.skill_bundle_version',?4,'$.extra.previous_native_thread',?2) WHERE id=?3",params![thread,previous,id,crate::agent_resources::VERSION])?;
             Ok(())
         }).await
     }
@@ -230,12 +244,16 @@ impl Store {
         key: String,
         request: Value,
         result: Value,
+        research_notice: bool,
     ) -> Result<()> {
         self.call(move |db| {
             let tx = db.transaction()?;
             let id = conversation["id"]
                 .as_str()
                 .ok_or_else(|| anyhow!("Missing conversation id"))?;
+            if research_notice {
+                crate::research_control::require_active(&tx, conversation["project_id"].as_str().unwrap_or_default(), id)?;
+            }
             tx.execute(
                 "UPDATE conversations SET body=? WHERE id=?",
                 params![conversation.to_string(), id],
@@ -334,6 +352,7 @@ mod tests {
             "input-1".into(),
             request.clone(),
             json!({"turn_id":"t"}),
+            false,
         )
         .await?;
         assert_eq!(

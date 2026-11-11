@@ -152,3 +152,13 @@ node frontend/desktop/scripts/verify-project-publish.mjs
 传输进度每 2 秒查询数据库中的权威状态。schema v2 升级旧库前自动生成 `metadata.pre-sync-v1.sqlite` 备份。开发者可通过 `TRAINERBUDDY_HOST_PACKAGE_DIR` 指向包含 `manifest.json` 和 Linux 二进制的目录。
 
 Linux 实测命令：`node backend/scripts/test-host-linux.mjs --runtime`。此开发脚本使用本机 `docker-desktop` WSL 的 `/mnt/host/<盘符>` 挂载，下载并校验仅供测试的 Python；产品仍复用服务器已有的 Python 3。验证记录和适用范围见 [验收记录](../reports/desktop/project-sync-implementation.md)。
+
+### 本地研究与训练
+
+已接入提示词模板、9 个研究技能、只读 alphaXiv MCP，以及 experiment/run 动态工具。Agent 准备固定计划/代码/命令，用户在“运行”页批准后启动独立本地 wrapper；后台恢复、取消、超时、指标、产物 Preview 和原会话结果通知已接通。数据库升级到 v4；远端 Host 仍仅用于文件传输，不支持训练提交。
+
+验证：`node backend/scripts/test-runs.mjs`、`node backend/scripts/test-runs.mjs --ui`；真实 Agent 闭环：`node backend/scripts/test-research-loop.mjs`（需要可用 Codex 登录）。样例在 `recipes/cpu-classifier/train.py`。使用方法、证据与尚未实现的 P2/P3/P4 能力见 [实施记录](../reports/desktop/research-workflow-implementation.md)。
+
+当前工具/技能版本 5 增加固定评估协议及 run_compare。Agent 准备时必须提供真实评估器摘要和数据版本；两次成功且证据完整的同协议运行可在“运行”页比较，旧无协议运行保留读取但不排名。样例需同时复制 train.py 和 evaluate.py。[比较阶段验收](../reports/desktop/research-comparison-implementation.md) 包含真实模型判读证据。
+
+后续控制增量已升级为工具版本 6/schema v5：研究暂停阻止新训练启动及自动结果分析，现有任务继续；结果通知采用有限次退避重试和失败后手动恢复。界面可查看暂停与通知状态。`node backend/scripts/test-runs.mjs --control --ui` 验证暂停、重启、发送失败、重试和去重。[控制阶段记录](../reports/desktop/research-control-implementation.md) 明确受理与分析成功的区别。

@@ -1,4 +1,9 @@
 mod api;
+mod agent_resources;
+mod runs;
+mod evaluation;
+mod research_control;
+mod run_wrapper;
 mod chat;
 mod compute;
 mod harness;
@@ -28,6 +33,9 @@ async fn main() -> Result<()> {
         return ssh_askpass::relay().await;
     }
     let args: Vec<String> = std::env::args().collect();
+    if let Some(index) = args.iter().position(|a| a == "--run-wrapper") {
+        return run_wrapper::run(std::path::Path::new(args.get(index + 1).ok_or_else(|| anyhow!("Missing run directory"))?)).await;
+    }
     let data_dir = args
         .windows(2)
         .find(|pair| pair[0] == "--data-dir")

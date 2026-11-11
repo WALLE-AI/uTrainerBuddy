@@ -32,10 +32,9 @@ fn main() {
             Some("initialized") => {}
             Some("thread/start" | "thread/resume") => {
                 if request["method"] == "thread/start" {
-                    assert_eq!(
-                        request["params"]["dynamicTools"].as_array().unwrap().len(),
-                        7
-                    );
+                    for name in ["research_document_write", "research_skill_read", "run_prepare", "run_evidence"] {
+                        assert!(request["params"]["dynamicTools"].as_array().unwrap().iter().any(|t|t["name"]==name));
+                    }
                 }
                 assert!(request["params"]["developerInstructions"]
                     .as_str()

@@ -279,7 +279,7 @@ mod tests {
             store
                 .call(|db| Ok(db.query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))?))
                 .await?,
-            3
+            5
         );
         assert_eq!(
             store
@@ -298,7 +298,7 @@ mod tests {
         );
         store
             .call(|db| {
-                db.execute_batch("PRAGMA user_version=4")?;
+                db.execute_batch("PRAGMA user_version=6")?;
                 Ok(())
             })
             .await?;

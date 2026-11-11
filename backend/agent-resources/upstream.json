@@ -1,0 +1,52 @@
+{
+    "upstream":  "https://github.com/alphaXiv/OpenResearch",
+    "commit":  "aa2a29354c9cb3cd8acbc71b5d0b4279788e2d0d",
+    "license":  "MIT",
+    "adaptation":  "Research workflow and prompt guidance adapted to backend-scoped dynamic tools and native read-only MCP; no upstream runtime dependency.",
+    "sources":  [
+                    {
+                        "path":  "SYSTEM_PROMPT.md",
+                        "sha256":  "ca21feb3634c3587e01abbde4f77ca715b50592cb9c5208181c3364311f72efc"
+                    },
+                    {
+                        "path":  "agent-skills/orx-lit-review/SKILL.md",
+                        "sha256":  "cf735d6795a91694e05557f39e4fe2559fb7c067978c4c01603226d8f1af3fbb"
+                    },
+                    {
+                        "path":  "agent-skills/orx-reports/SKILL.md",
+                        "sha256":  "0755bad53a47e7f8fe6798293d6e8c72846cc3ee3e812a3047001b7c70ec6c40"
+                    },
+                    {
+                        "path":  "agent-skills/orx-create/SKILL.md",
+                        "sha256":  "85bff624fb082afde88af055557a63e328d150c3e6e24ae6b7d555dd4319cc0c"
+                    },
+                    {
+                        "path":  "src/commands/alphaxiv_mcp.rs",
+                        "sha256":  "c1f17e880142e5574b92f79cb539500dd560e512fe86429b9372c672fbffac12"
+                    },
+                    {
+                        "path":  "agent-skills/orx-git/SKILL.md",
+                        "sha256":  "81708b575217090c35919b00b65dccd14dde992811d40c636e28c03784da6b67"
+                    },
+                    {
+                        "path":  "agent-skills/orx-experiment-tree/SKILL.md",
+                        "sha256":  "8c8c5d07f4812dcdc362b17f1346f0aa869875ea58d2d19a16d203bbc225f6ed"
+                    },
+                    {
+                        "path":  "agent-skills/orx-compute/SKILL.md",
+                        "sha256":  "a7a6994412f0bae26ece5d923b58282fd469f67b607296c5d25e929d5cc75d2e"
+                    },
+                    {
+                        "path":  "agent-skills/orx-logs/SKILL.md",
+                        "sha256":  "5fb8fd6a6bd300e75eb96f2ba74a57d73df6e70cdaffce0362ff8a83bb82c61c"
+                    },
+                    {
+                        "path":  "agent-skills/orx-results/SKILL.md",
+                        "sha256":  "9a63bec8104299a922f9c31fc3d87537ae2a54bc63b477342fe315a95b985607"
+                    },
+                    {
+                        "path":  "agent-skills/orx-figures/SKILL.md",
+                        "sha256":  "5d2343d468a4c6bdb0ad1c10bbd5b64b2f9ce9b69d94fecebd61d1b3fafaf711"
+                    }
+                ]
+}

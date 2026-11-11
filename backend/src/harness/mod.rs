@@ -1,5 +1,5 @@
 pub mod codex;
-mod process_group;
+pub(crate) mod process_group;
 
 use serde_json::{json, Value};
 
@@ -11,5 +11,5 @@ pub fn capabilities(codex_installed: bool) -> Value {
         {"id":"claude-code","protocol":"stream-json","implemented":false},
         {"id":"opencode","protocol":"http-sse","implemented":false},
         {"id":"deepseek-harness","protocol":null,"implemented":false}
-    ],"training":false,"ssh":false})
+    ],"training":true,"training_targets":["local"],"autonomous_training":false,"ssh":false})
 }

@@ -9,6 +9,7 @@ import { useCurrentConversation } from '@/renderer/pages/conversation/explorer/c
 import { ProjectFiles } from './ProjectFiles';
 import { ResearchComputeCard } from '../compute/ResearchComputeCard';
 import { PlanDocuments } from '../research/PlanDocuments';
+import { ResearchRuns } from '../research/ResearchRuns';
 import { usePreviewContext } from '@/renderer/pages/conversation/Preview';
 import { emitter } from '@/renderer/utils/emitter';
 import { Message } from '@arco-design/web-react';
@@ -138,7 +139,7 @@ export function ProjectWorkbench({
       aria-labelledby={`${id}-${tab}`}
       className='workbench-body'
       tabIndex={0}
-    />}
+    >{conversationId && <ResearchRuns projectId={projectId} conversationId={conversationId} active={enabled} tab={tab} />}</section>}
     <section id={`${id}-files-panel`} role='tabpanel' aria-labelledby={`${id}-files`} hidden={tab !== 'files'} className='workbench-body workbench-files-panel'>
       <ProjectFiles key={projectId} projectId={projectId} active={tab === 'files' && !collapsed} />
     </section>
