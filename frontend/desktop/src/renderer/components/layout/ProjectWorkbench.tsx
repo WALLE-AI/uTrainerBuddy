@@ -8,6 +8,7 @@ import { ipcBridge } from '@/common';
 import { useCurrentConversation } from '@/renderer/pages/conversation/explorer/currentConversationStore';
 import { ProjectFiles } from './ProjectFiles';
 import { ResearchComputeCard } from '../compute/ResearchComputeCard';
+import { ResearchGoals } from '../research/ResearchGoals';
 import { emitter } from '@/renderer/utils/emitter';
 import { Message } from '@arco-design/web-react';
 import { Close, FullScreen, Pushpin, Refresh } from '@icon-park/react';
@@ -139,14 +140,15 @@ export function ProjectWorkbench({
     <section id={`${id}-files-panel`} role='tabpanel' aria-labelledby={`${id}-files`} hidden={tab !== 'files'} className='workbench-body workbench-files-panel'>
       <ProjectFiles key={projectId} projectId={projectId} active={tab === 'files' && !collapsed} />
     </section>
-    {tab === 'plan' && <section
-      id={`${id}-${tab}-panel`}
+    <section hidden={tab !== 'plan'}
+      id={`${id}-plan-panel`}
       role='tabpanel'
-      aria-labelledby={`${id}-${tab}`}
+      aria-labelledby={`${id}-plan`}
       className='workbench-body'
       tabIndex={0}
     >
-      {conversationId && <ResearchComputeCard projectId={projectId} active={enabled} onOpenFiles={() => selectTab('files')} />}
+      {conversationId && <ResearchGoals projectId={projectId} conversationId={conversationId} active={enabled && tab === 'plan'} />}
+      {conversationId && <ResearchComputeCard projectId={projectId} active={enabled && tab === 'plan'} onOpenFiles={() => selectTab('files')} />}
       <div className='workbench-section-heading'>
         <h3>{label('latestPlan')}</h3>
         <button
@@ -193,6 +195,6 @@ export function ProjectWorkbench({
           >{label('discussPlan')}</button>
         </> : empty('noPlan', 'noPlanHint'))}
       </>}
-    </section>}
+    </section>
   </>;
 }
